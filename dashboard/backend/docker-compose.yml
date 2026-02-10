@@ -1,0 +1,39 @@
+# Phase 20: Docker Compose for full stack
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - JWT_SECRET=${JWT_SECRET}
+      - CREDENTIAL_ENCRYPTION_KEY=${CREDENTIAL_ENCRYPTION_KEY}
+      - CORS_ORIGIN=${CORS_ORIGIN:-http://localhost:3001}
+    volumes:
+      - db-data:/app/enterprise-pc.db
+      - logs:/app/logs
+      - screenshots:/app/screenshots
+      - uploads:/app/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '2.0'
+
+volumes:
+  db-data:
+  logs:
+  screenshots:
+  uploads:

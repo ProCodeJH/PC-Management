@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "D:\\Dark_Virus\\Enterprise-PC-Management\\dashboard\\backend\\logs\\.9df4899bc8702ce85a796d5f12fc775edc664eef-audit.json",
+    "files": [
+        {
+            "date": 1770633576328,
+            "name": "D:\\Dark_Virus\\Enterprise-PC-Management\\dashboard\\backend\\logs\\error-2026-02-09.log",
+            "hash": "9715daac56e2af5c5501b2d9b0d0e12fc30c6de93851851188c58dc35232ff22"
+        }
+    ],
+    "hashType": "sha256"
+}

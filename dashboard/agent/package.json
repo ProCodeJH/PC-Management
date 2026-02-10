@@ -1,0 +1,15 @@
+{
+    "name": "pc-agent",
+    "version": "2.0.0",
+    "description": "학생 PC 에이전트 — 서버와 WebSocket 실시간 통신",
+    "main": "agent.js",
+    "scripts": {
+        "start": "node agent.js",
+        "dev": "node agent.js --verbose"
+    },
+    "dependencies": {
+        "socket.io-client": "^4.7.2",
+        "screenshot-desktop": "^1.15.0",
+        "systeminformation": "^5.21.0"
+    }
+}

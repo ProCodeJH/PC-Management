@@ -1,0 +1,1 @@
+Error: SQLITE_ERROR: no such column: group_id

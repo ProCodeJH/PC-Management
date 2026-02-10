@@ -1,0 +1,75 @@
+    ========================================================================
+    =                                                                      =
+    =   ENTERPRISE PC MANAGEMENT - Student PC Setup                       =
+    =   Version 3.0 Ultra Standalone                                      =
+    =                                                                      =
+    ========================================================================
+
+    [OK] Administrator privileges confirmed
+    [*] Starting setup... (approximately 30 seconds)
+
+    [==------------------] [1/8] [...] WinRM Service Activation
+
+    [==------------------] [1/8] [OK] WinRM Service Activation
+
+    [=====---------------] [2/8] [...] PSRemoting Activation
+
+    [=====---------------] [2/8] [OK] PSRemoting Activation
+
+    [=======-------------] [3/8] [...] Basic Authentication
+
+    [=======-------------] [3/8] [OK] Basic Authentication
+
+    [==========----------] [4/8] [...] Negotiate Authentication
+
+    [==========----------] [4/8] [OK] Negotiate Authentication
+
+    [============--------] [5/8] [...] TrustedHosts Configuration
+
+    [============--------] [5/8] [OK] TrustedHosts Configuration
+
+    [===============-----] [6/8] [...] Firewall Rules
+
+    [===============-----] [6/8] [OK] Firewall Rules
+
+    [=================---] [7/8] [...] Local Account Remote Policy
+
+    [=================---] [7/8] [OK] Local Account Remote Policy
+
+    [====================] [8/8] [...] WinRM Connection Verification
+
+    [====================] [8/8] [OK] WinRM Connection Verification
+
+    ========================================================================
+
+         ========================================
+         =          SETUP COMPLETE             =
+         ========================================
+
+         Student PC setup completed successfully
+
+    +------------------------------------------------------------------+
+    |  PC INFORMATION                                                 |
+    +------------------------------------------------------------------+
+    ^|  Computer Name: (DESKTOP-A964FK0.PadRight^(48^)^)^|
+    ^|  IP Address:    (192.168.0.26.PadRight^(48^)^)^|
+    ^|  WinRM Status:  ([OK] Running.PadRight^(48^)^)^|
+    +------------------------------------------------------------------+
+
+    Result Summary:
+    Verification : [OK]
+    WinRM_Service : [OK]
+    Negotiate_Auth : [OK]
+    PSRemoting : [OK]
+    Basic_Auth : [OK]
+    Account_Policy : [OK]
+    TrustedHosts : [OK]
+    Firewall : [OK]
+
+    ========================================================================
+
+    Remote management is now available from the teacher PC
+    You can close this window.
+
+
+  Press any key to exit...

@@ -1,16 +1,16 @@
-# Enable-RemoteManagement.ps1
-# 원격 관리 기능 활성화 (학생 PC에서 1회 실행)
-# + 선택적 클린 PC 기능
+﻿# Enable-RemoteManagement.ps1
+# Remote management feature activation (Run once on student PC)
+# + Optional Clean PC feature
 
 <#
 .SYNOPSIS
-    원격 배포를 위한 WinRM 설정 + 클린 PC 옵션
+    WinRM setup for remote deployment + Clean PC option
 
 .DESCRIPTION
-    이 스크립트를 학생 PC에서 1회 실행하면
-    관리자 PC에서 원격으로 시스템을 배포할 수 있습니다.
+    Run this script once on student PC
+    Then admin can deploy systems remotely from admin PC.
     
-    -CleanPC 옵션 사용 시 새 본체처럼 모든 프로그램 제거
+    Use -CleanPC option to remove all programs like a new PC
 
 .EXAMPLE
     .\Enable-RemoteManagement.ps1
@@ -24,7 +24,7 @@ param(
     [switch]$Auto
 )
 
-# 관리자 권한 확인
+# Administrator check
 if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
     Write-Host ""
     Write-Host "  ERROR: Administrator required!" -ForegroundColor Red
@@ -38,37 +38,37 @@ $Host.UI.RawUI.BackgroundColor = "Black"
 Clear-Host
 
 Write-Host ""
-Write-Host "  ╔══════════════════════════════════════════════════════════════╗" -ForegroundColor Cyan
-Write-Host "  ║                                                              ║" -ForegroundColor Cyan
-Write-Host "  ║     🚀  ENTERPRISE PC MANAGEMENT                            ║" -ForegroundColor Cyan
-Write-Host "  ║         Remote Management Setup                              ║" -ForegroundColor Cyan
-Write-Host "  ║                                                              ║" -ForegroundColor Cyan
-Write-Host "  ╚══════════════════════════════════════════════════════════════╝" -ForegroundColor Cyan
+Write-Host "  ================================================================" -ForegroundColor Cyan
+Write-Host "  |                                                              |" -ForegroundColor Cyan
+Write-Host "  |     ENTERPRISE PC MANAGEMENT                                 |" -ForegroundColor Cyan
+Write-Host "  |     Remote Management Setup                                  |" -ForegroundColor Cyan
+Write-Host "  |                                                              |" -ForegroundColor Cyan
+Write-Host "  ================================================================" -ForegroundColor Cyan
 Write-Host ""
 
 # ========================================
-# Clean PC 옵션 처리
+# Clean PC option processing
 # ========================================
 if ($CleanPC) {
-    Write-Host "  ╔══════════════════════════════════════════════════════════════╗" -ForegroundColor Red
-    Write-Host "  ║  ⚠️  CLEAN PC MODE ENABLED                                  ║" -ForegroundColor Red
-    Write-Host "  ║  All programs will be removed!                              ║" -ForegroundColor Red
-    Write-Host "  ╚══════════════════════════════════════════════════════════════╝" -ForegroundColor Red
+    Write-Host "  ================================================================" -ForegroundColor Red
+    Write-Host "  |  WARNING: CLEAN PC MODE ENABLED                             |" -ForegroundColor Red
+    Write-Host "  |  All programs will be removed!                              |" -ForegroundColor Red
+    Write-Host "  ================================================================" -ForegroundColor Red
     Write-Host ""
     Write-Host "  This will REMOVE:" -ForegroundColor Yellow
-    Write-Host "    • ALL installed programs (games, browsers, messengers...)" -ForegroundColor White
-    Write-Host "    • ALL Windows Store apps (except essential)" -ForegroundColor White
-    Write-Host "    • ALL user data (Downloads, browser data...)" -ForegroundColor White
+    Write-Host "    * ALL installed programs (games, browsers, messengers...)" -ForegroundColor White
+    Write-Host "    * ALL Windows Store apps (except essential)" -ForegroundColor White
+    Write-Host "    * ALL user data (Downloads, browser data...)" -ForegroundColor White
     Write-Host ""
     
     if ($KeepOffice) {
-        Write-Host "  ✓ Microsoft Office will be KEPT" -ForegroundColor Green
+        Write-Host "  [OK] Microsoft Office will be KEPT" -ForegroundColor Green
     }
     
     Write-Host ""
     
     if (-not $Auto) {
-        Write-Host "  ⚠️  WARNING: This CANNOT be undone!" -ForegroundColor Red
+        Write-Host "  WARNING: This CANNOT be undone!" -ForegroundColor Red
         Write-Host ""
         $cleanConfirm = Read-Host "  Type 'CLEAN' to enable clean mode, or Enter to skip"
         
@@ -81,7 +81,7 @@ if ($CleanPC) {
     Write-Host ""
 }
 
-Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
+Write-Host "----------------------------------------------------------------" -ForegroundColor DarkGray
 Write-Host ""
 
 if (-not $Auto) {
@@ -107,12 +107,12 @@ function Write-Step($message) {
 
 try {
     # ========================================
-    # CLEAN PC 실행 (옵션)
+    # CLEAN PC execution (option)
     # ========================================
     if ($CleanPC) {
         Write-Step "Removing installed programs..."
         
-        # 화이트리스트
+        # Whitelist
         $whitelist = @(
             "*Microsoft*Edge*", "*Windows*", "*Microsoft Visual C++*",
             "*Microsoft .NET*", "*.NET Framework*", "*DirectX*"
@@ -121,7 +121,7 @@ try {
             $whitelist += @("*Microsoft Office*", "*Microsoft 365*", "*Word*", "*Excel*", "*PowerPoint*", "*Outlook*")
         }
         
-        # 레지스트리 프로그램 제거
+        # Registry program removal
         $uninstallPaths = @(
             "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
             "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*"
@@ -152,10 +152,10 @@ try {
                 }
             }
         }
-        Write-Host "    ✓ Removed $removedCount programs" -ForegroundColor Green
+        Write-Host "    [OK] Removed $removedCount programs" -ForegroundColor Green
         Write-Host ""
         
-        # Windows Store 앱 제거
+        # Windows Store app removal
         Write-Step "Removing Windows Store apps..."
         $essentialApps = @("*WindowsStore*", "*Calculator*", "*Photos*", "*WindowsCamera*", "*Microsoft.Windows*", "*VCLibs*", "*UI.Xaml*")
         
@@ -168,10 +168,10 @@ try {
                 try { Remove-AppxPackage -Package $_.PackageFullName -AllUsers -ErrorAction SilentlyContinue } catch { }
             }
         }
-        Write-Host "    ✓ Store apps cleaned" -ForegroundColor Green
+        Write-Host "    [OK] Store apps cleaned" -ForegroundColor Green
         Write-Host ""
         
-        # 프로그램 폴더 정리
+        # Program folder cleanup
         Write-Step "Cleaning program folders..."
         $folderWhitelist = @("Common Files", "Microsoft*", "Windows*", "Internet Explorer", "WindowsPowerShell", "dotnet")
         
@@ -192,10 +192,10 @@ try {
                 }
             }
         }
-        Write-Host "    ✓ Program folders cleaned" -ForegroundColor Green
+        Write-Host "    [OK] Program folders cleaned" -ForegroundColor Green
         Write-Host ""
         
-        # 사용자 데이터 정리
+        # User data cleanup
         Write-Step "Cleaning user data..."
         @(
             "$env:LOCALAPPDATA\Google", "$env:LOCALAPPDATA\Mozilla", "$env:LOCALAPPDATA\Discord",
@@ -203,31 +203,31 @@ try {
         ) | ForEach-Object {
             if (Test-Path $_) { Remove-Item -Path $_ -Recurse -Force -ErrorAction SilentlyContinue }
         }
-        Write-Host "    ✓ User data cleaned" -ForegroundColor Green
+        Write-Host "    [OK] User data cleaned" -ForegroundColor Green
         Write-Host ""
         
-        # 시스템 정리
+        # System cleanup
         Write-Step "System cleanup..."
         Remove-Item -Path "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
         Remove-Item -Path "C:\Windows\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
         Remove-Item -Path "$env:USERPROFILE\Downloads\*" -Recurse -Force -ErrorAction SilentlyContinue
         Clear-RecycleBin -Force -ErrorAction SilentlyContinue
-        Write-Host "    ✓ System cleaned" -ForegroundColor Green
+        Write-Host "    [OK] System cleaned" -ForegroundColor Green
         Write-Host ""
     }
     
     # ========================================
-    # 원격 관리 설정
+    # Remote management setup
     # ========================================
     Write-Step "Enabling PowerShell Remoting..."
     Enable-PSRemoting -Force -SkipNetworkProfileCheck
-    Write-Host "    ✓ Done" -ForegroundColor Green
+    Write-Host "    [OK] Done" -ForegroundColor Green
     Write-Host ""
     
     Write-Step "Configuring WinRM Service..."
     Set-Service -Name WinRM -StartupType Automatic
     Start-Service -Name WinRM
-    Write-Host "    ✓ Done" -ForegroundColor Green
+    Write-Host "    [OK] Done" -ForegroundColor Green
     Write-Host ""
     
     Write-Step "Configuring Firewall..."
@@ -238,43 +238,45 @@ try {
     else {
         Enable-NetFirewallRule -Name "WINRM-HTTP-In-TCP"
     }
-    Write-Host "    ✓ Port 5985 opened" -ForegroundColor Green
+    Write-Host "    [OK] Port 5985 opened" -ForegroundColor Green
     Write-Host ""
     
     Write-Step "Setting Trusted Hosts..."
-    Set-Item WSMan:\localhost\Client\TrustedHosts -Value "*" -Force
-    Write-Host "    ✓ Done" -ForegroundColor Green
+    # 보안: 내부 서브넷으로 제한 (전체 허용 제거)
+    # 필요시 IP 범위를 환경에 맞게 수정하세요
+    Set-Item WSMan:\localhost\Client\TrustedHosts -Value "192.168.*.*" -Force
+    Write-Host "    [OK] Done" -ForegroundColor Green
     Write-Host ""
     
     # ========================================
-    # 완료
+    # Complete
     # ========================================
     $ipAddress = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike "127.*" } | Select-Object -First 1).IPAddress
     
-    Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" -ForegroundColor DarkGray
+    Write-Host "----------------------------------------------------------------" -ForegroundColor DarkGray
     Write-Host ""
-    Write-Host "  ╔══════════════════════════════════════════════════════════════╗" -ForegroundColor Green
-    Write-Host "  ║                                                              ║" -ForegroundColor Green
-    Write-Host "  ║     ✓ SETUP COMPLETE!                                       ║" -ForegroundColor Green
-    Write-Host "  ║                                                              ║" -ForegroundColor Green
-    Write-Host "  ╚══════════════════════════════════════════════════════════════╝" -ForegroundColor Green
+    Write-Host "  ================================================================" -ForegroundColor Green
+    Write-Host "  |                                                              |" -ForegroundColor Green
+    Write-Host "  |     [OK] SETUP COMPLETE!                                     |" -ForegroundColor Green
+    Write-Host "  |                                                              |" -ForegroundColor Green
+    Write-Host "  ================================================================" -ForegroundColor Green
     Write-Host ""
     
     if ($CleanPC) {
-        Write-Host "  ✓ PC cleaned to factory-like state!" -ForegroundColor Cyan
+        Write-Host "  [OK] PC cleaned to factory-like state!" -ForegroundColor Cyan
     }
     
     Write-Host ""
     Write-Host "  PC Information:" -ForegroundColor White
-    Write-Host "  ───────────────────────────" -ForegroundColor DarkGray
+    Write-Host "  ---------------------------" -ForegroundColor DarkGray
     Write-Host "    Computer:   $env:COMPUTERNAME" -ForegroundColor Gray
     Write-Host "    IP Address: $ipAddress" -ForegroundColor Yellow
     Write-Host ""
-    Write-Host "  👉 Enter this IP in the admin dashboard to deploy!" -ForegroundColor Cyan
+    Write-Host "  --> Enter this IP in the admin dashboard to deploy!" -ForegroundColor Cyan
     Write-Host ""
     
     if ($CleanPC) {
-        Write-Host "  ⚠️  Restart recommended for complete cleanup" -ForegroundColor Yellow
+        Write-Host "  WARNING: Restart recommended for complete cleanup" -ForegroundColor Yellow
         Write-Host ""
         $restart = Read-Host "  Restart now? (Y/N)"
         if ($restart -eq 'Y' -or $restart -eq 'y') {
@@ -292,5 +294,5 @@ catch {
 
 if (-not $Auto) {
     Write-Host ""
-    Read-Host "  Press Enter to exit"
+    Read-Host "Press Enter to exit"
 }
