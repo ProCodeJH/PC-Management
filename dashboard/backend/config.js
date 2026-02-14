@@ -74,4 +74,10 @@ module.exports = {
     // API
     API_VERSION: 'v1',
     REQUEST_TIMEOUT_MS: 30000,
+
+    // Supabase Mirroring (optional — best-effort)
+    SUPABASE_URL: process.env.SUPABASE_URL || '',
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+    SUPABASE_MIRROR_ENABLED: !!process.env.SUPABASE_URL,
+    SUPABASE_BATCH_INTERVAL_MS: 60000,  // 1min activity log batch
 };

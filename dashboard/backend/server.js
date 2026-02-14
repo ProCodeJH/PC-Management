@@ -33,6 +33,9 @@ const ApiResponse = require('./utils/response');
 const validate = require('./utils/validators');
 const DatabaseWrapper = require('./utils/db');
 
+// Supabase Mirroring (best-effort)
+const mirror = require('./services/supabaseMirror');
+
 // Security Modules
 const bcrypt = require('bcrypt');
 const rateLimit = require('express-rate-limit');
@@ -354,6 +357,11 @@ app.get('/api/health', async (req, res) => {
             queries: dbWrapper.metrics(),
         },
         cache: cache.stats(),
+        supabase: {
+            enabled: mirror.isEnabled,
+            queueSize: mirror.queueSize,
+            activeSessions: mirror.sessionCount,
+        },
         metrics: config.METRICS_ENABLED ? {
             requests: metrics.counters.requests_total,
             errorRate: metrics.counters.requests_total > 0
@@ -607,6 +615,9 @@ io.on('connection', (socket) => {
         const { pcName, ipAddress } = data;
         if (!pcName || typeof pcName !== 'string') return;
 
+        // Track pcName on socket for disconnect handler
+        socket.pcName = pcName;
+
         db.run(`INSERT OR REPLACE INTO pc_status (pc_name, ip_address, status, last_seen)
                 VALUES (?, ?, 'online', datetime('now'))`, [pcName.substring(0, 64), ipAddress], (err) => {
             if (err) logger.error('Error registering PC:', err);
@@ -614,6 +625,9 @@ io.on('connection', (socket) => {
             cache.invalidate('stats');
             io.emit('pc-updated', { pcName, status: 'online' });
         });
+
+        // Supabase mirroring (fire-and-forget)
+        mirror.onPcConnect(pcName, ipAddress);
     });
 
     socket.on('update-status', (data) => {
@@ -634,6 +648,20 @@ io.on('connection', (socket) => {
         db.run(`INSERT INTO activity_logs (pc_name, user, activity_type, details) VALUES (?, ?, ?, ?)`,
             [pcName, user, activityType, typeof details === 'object' ? JSON.stringify(details) : details]);
         metrics.inc('ws_messages');
+
+        // Supabase mirroring — map activityType to event_type
+        const eventTypeMap = {
+            'app_open': 'app_open', 'app_close': 'app_close',
+            'web_visit': 'web_visit', 'lock': 'lock', 'unlock': 'unlock',
+            'program_start': 'app_open', 'program_end': 'app_close',
+            'website_visit': 'web_visit',
+        };
+        const eventType = eventTypeMap[activityType] || activityType;
+        const parsedDetails = typeof details === 'object' ? details : {};
+        mirror.queueActivity(pcName, eventType, {
+            appName: parsedDetails.appName || parsedDetails.app_name || parsedDetails.name || null,
+            url: parsedDetails.url || null,
+        });
     });
 
     socket.on('screenshot', (data) => {
@@ -655,6 +683,9 @@ io.on('connection', (socket) => {
             db.run(`INSERT INTO screenshots (pc_name, filename, filepath, file_size) VALUES (?, ?, ?, ?)`,
                 [pcName, safeName, filePath, buffer.length]);
             io.emit('screenshot-received', { pcName, filename: safeName });
+
+            // Supabase mirroring
+            mirror.onScreenshot(pcName);
         });
     });
 
@@ -695,6 +726,11 @@ io.on('connection', (socket) => {
         if (wsConnections.get(clientIp) === 0) wsConnections.delete(clientIp);
         metrics.set('active_connections', io.engine?.clientsCount || 0);
         logger.info(`WS disconnected: ${socket.id}`);
+
+        // Supabase mirroring — mark PC offline
+        if (socket.pcName) {
+            mirror.onPcDisconnect(socket.pcName);
+        }
     });
 });
 
@@ -782,6 +818,9 @@ const shutdown = async (signal) => {
     logger.info(`\n${signal} received — graceful shutdown...`);
     scheduler.stop();
     metrics.destroy();
+
+    // Flush remaining Supabase activity logs
+    try { await mirror.flush(); } catch (e) { /* best-effort */ }
 
     server.close(() => {
         rawDb.run('PRAGMA optimize', () => {
