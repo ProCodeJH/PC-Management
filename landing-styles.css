@@ -2,33 +2,33 @@
    CSS VARIABLES - Design Tokens
 ======================================== */
 :root {
-    /* Colors */
-    --color-primary: #043873;
-    --color-secondary: #4f9cf9;
-    --color-bg-light: #c4defd;
-    --color-accent: #ffe492;
-    --color-text-dark: #212529;
+    /* Colors — Coddy Dark Brown */
+    --color-primary: #1e1c1a;
+    --color-secondary: #EC5212;
+    --color-bg-light: #2d2a26;
+    --color-accent: #e8854a;
+    --color-text-dark: #f5f0e8;
     --color-white: #ffffff;
-    --color-bg-white: #ffffff;
-    --color-gray: #f7f7ee;
-    
+    --color-bg-white: #252320;
+    --color-gray: #2d2a26;
+
     /* Fonts */
     --font-primary: 'Inter', sans-serif;
     --font-nav: 'DM Sans', sans-serif;
     --font-accent: 'Montserrat', sans-serif;
-    
+
     /* Spacing */
     --spacing-xs: 8px;
     --spacing-sm: 10px;
     --spacing-md: 24px;
     --spacing-lg: 60px;
     --spacing-xl: 100px;
-    
+
     /* Border radius */
     --radius-sm: 6px;
-    --radius-md: 8px;
-    --radius-lg: 10px;
-    
+    --radius-md: 10px;
+    --radius-lg: 16px;
+
     /* Container */
     --container-max: 1200px;
     --container-padding: 32px;
@@ -56,7 +56,12 @@ body {
     padding: 0 var(--container-padding);
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     line-height: 1.2;
     font-weight: 700;
 }
@@ -133,7 +138,10 @@ img {
 /* ========================================
    BUTTONS
 ======================================== */
-.btn-primary, .btn-secondary, .btn-login, .btn-outline {
+.btn-primary,
+.btn-secondary,
+.btn-login,
+.btn-outline {
     display: inline-flex;
     align-items: center;
     gap: var(--spacing-sm);
@@ -350,7 +358,7 @@ img {
     direction: rtl;
 }
 
-.feature-reverse > * {
+.feature-reverse>* {
     direction: ltr;
 }
 
@@ -380,12 +388,41 @@ img {
     border-radius: 50%;
 }
 
-.circle-red { background: #ff6b6b; top: 20%; left: 10%; }
-.circle-yellow { background: #ffd93d; top: 5%; left: 30%; }
-.circle-blue { background: #4f9cf9; top: 10%; right: 15%; }
-.circle-green { background: #00d4aa; bottom: 25%; right: 5%; }
-.circle-orange { background: #ffb347; bottom: 35%; left: 25%; }
-.circle-blue-2 { background: #6c9eff; bottom: 15%; left: 15%; }
+.circle-red {
+    background: #ff6b6b;
+    top: 20%;
+    left: 10%;
+}
+
+.circle-yellow {
+    background: #ffd93d;
+    top: 5%;
+    left: 30%;
+}
+
+.circle-blue {
+    background: #4f9cf9;
+    top: 10%;
+    right: 15%;
+}
+
+.circle-green {
+    background: #00d4aa;
+    bottom: 25%;
+    right: 5%;
+}
+
+.circle-orange {
+    background: #ffb347;
+    bottom: 35%;
+    left: 25%;
+}
+
+.circle-blue-2 {
+    background: #6c9eff;
+    bottom: 15%;
+    left: 15%;
+}
 
 .center-logo {
     position: absolute;
@@ -445,4 +482,4 @@ img {
 .pricing-featured {
     background: var(--color-primary);
     color: var(--color-white);
-    box-shadow: 
+    box-shadow:

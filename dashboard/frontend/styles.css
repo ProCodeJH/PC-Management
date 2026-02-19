@@ -5,44 +5,44 @@
 ======================================== */
 
 :root {
-    /* Premium Neutral Palette — Zinc */
-    --gray-50: #fafafa;
-    --gray-100: #f4f4f5;
-    --gray-200: #e4e4e7;
-    --gray-300: #d4d4d8;
-    --gray-400: #a1a1aa;
-    --gray-500: #71717a;
-    --gray-600: #52525b;
-    --gray-700: #3f3f46;
-    --gray-800: #27272a;
-    --gray-900: #18181b;
-    --gray-950: #09090b;
+    /* Premium Neutral Palette — Coddy Dark Brown */
+    --gray-50: #f5f0e8;
+    --gray-100: #d4cec4;
+    --gray-200: #b0a898;
+    --gray-300: #8a8070;
+    --gray-400: #6a6258;
+    --gray-500: #554e44;
+    --gray-600: #4a4640;
+    --gray-700: #3a3632;
+    --gray-800: #2d2a26;
+    --gray-900: #252320;
+    --gray-950: #1e1c1a;
 
-    /* Accent — Luminous Cyan/Teal */
-    --accent: #06b6d4;
-    --accent-light: #22d3ee;
-    --accent-dark: #0891b2;
-    --accent-soft: rgba(6, 182, 212, 0.12);
-    --accent-glow: rgba(6, 182, 212, 0.25);
+    /* Accent — Coddy Orange */
+    --accent: #EC5212;
+    --accent-light: #e8854a;
+    --accent-dark: #d4480f;
+    --accent-soft: rgba(236, 82, 18, 0.12);
+    --accent-glow: rgba(236, 82, 18, 0.25);
 
     /* Status */
-    --success: #10b981;
-    --success-soft: rgba(16, 185, 129, 0.12);
+    --success: #22c55e;
+    --success-soft: rgba(34, 197, 94, 0.12);
     --warning: #f59e0b;
     --warning-soft: rgba(245, 158, 11, 0.12);
     --error: #ef4444;
     --error-soft: rgba(239, 68, 68, 0.12);
-    --info: #0ea5e9;
-    --info-soft: rgba(14, 165, 233, 0.12);
+    --info: #22d3ee;
+    --info-soft: rgba(34, 211, 238, 0.12);
 
-    /* Backgrounds — Deep Dark */
-    --bg-primary: #09090b;
-    --bg-secondary: #111113;
-    --bg-tertiary: #1a1a1e;
-    --bg-elevated: #1e1e22;
-    --bg-hover: rgba(255, 255, 255, 0.03);
-    --bg-deep: #050506;
-    --bg-glass: rgba(17, 17, 19, 0.8);
+    /* Backgrounds — Coddy Dark Brown */
+    --bg-primary: #1e1c1a;
+    --bg-secondary: #252320;
+    --bg-tertiary: #2d2a26;
+    --bg-elevated: #353230;
+    --bg-hover: rgba(255, 255, 255, 0.04);
+    --bg-deep: #191714;
+    --bg-glass: rgba(37, 35, 32, 0.85);
 
     /* Borders — Subtle */
     --border: rgba(255, 255, 255, 0.06);
@@ -51,17 +51,17 @@
     --border-subtle: rgba(255, 255, 255, 0.03);
 
     /* Text */
-    --text-primary: #fafafa;
-    --text-secondary: #a1a1aa;
-    --text-tertiary: #71717a;
-    --text-muted: #3f3f46;
+    --text-primary: #f5f0e8;
+    --text-secondary: #b0a898;
+    --text-tertiary: #8a8070;
+    --text-muted: #4a4640;
 
     /* Shadows — Premium Depth */
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
-    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.6);
-    --shadow-glow: 0 0 20px rgba(6, 182, 212, 0.15);
-    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
+    --shadow-glow: 0 0 20px rgba(236, 82, 18, 0.15);
+    --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.04);
 
     /* Layout */
     --sidebar-width: 240px;
@@ -69,7 +69,7 @@
     --radius-xs: 4px;
     --radius-sm: 6px;
     --radius-md: 10px;
-    --radius-lg: 14px;
+    --radius-lg: 16px;
     --radius-xl: 20px;
     --radius-full: 9999px;
 
