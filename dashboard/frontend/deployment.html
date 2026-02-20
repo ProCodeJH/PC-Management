@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>배포 & 설정 — Enterprise PC Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2563eb", "primary-dark": "#1e40af", "primary-light": "#dbeafe",
+                        "secondary": "#64748b", "bg-base": "#f1f5f9", "surface": "#ffffff", "border-c": "#e2e8f0",
+                    },
+                    fontFamily: { "display": ["Inter", "sans-serif"], "body": ["Inter", "sans-serif"] },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1rem" },
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="bg-bg-base font-display text-slate-800 antialiased overflow-hidden">
+    <div class="flex h-screen w-full overflow-hidden">
+
+        <!-- Sidebar -->
+        <aside class="hidden md:flex flex-col w-64 bg-white border-r border-border-c flex-shrink-0 shadow-sm z-10">
+            <div class="flex items-center gap-3 px-5 py-5 border-b border-slate-100">
+                <div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center"><span
+                        class="material-symbols-outlined text-white text-xl"
+                        style="font-variation-settings:'FILL' 1">dashboard</span></div>
+                <div>
+                    <p class="text-sm font-bold text-slate-800 leading-tight">Enterprise</p>
+                    <p class="text-xs text-slate-400 leading-tight">PC Manager</p>
+                </div>
+            </div>
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto sidebar-scroll">
+                <p class="px-3 pb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Overview</p>
+                <a href="index.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">space_dashboard</span><span>대시보드</span></a>
+                <a href="classroom.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">grid_view</span><span>교실 모니터링</span></a>
+                <a href="student.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">person_search</span><span>학생 활동 로그</span></a>
+                <p class="px-3 pt-5 pb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Management
+                </p>
+                <a href="communication.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">forum</span><span>커뮤니케이션</span></a>
+                <a href="deployment.html" class="nav-link active"><span
+                        class="material-symbols-outlined text-[20px]">deployed_code</span><span>배포 & 설정</span></a>
+                <a href="analytics.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">monitoring</span><span>AI 분석</span></a>
+                <p class="px-3 pt-5 pb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">System</p>
+                <a href="#" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">settings</span><span>설정</span></a>
+            </nav>
+            <div class="px-5 py-4 border-t border-slate-100">
+                <div class="flex items-center gap-2 text-xs text-slate-400"><span
+                        class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span>시스템 정상</span></div>
+                <p class="text-[10px] text-slate-300 mt-1">v4.0.0</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col h-full overflow-hidden relative bg-slate-50/50">
+            <header
+                class="flex items-center justify-between px-6 h-16 bg-white/80 backdrop-blur border-b border-border-c flex-shrink-0">
+                <div>
+                    <h1 class="text-lg font-bold text-slate-800">배포 & 설정</h1>
+                    <p class="text-xs text-slate-400 -mt-0.5">Software Deployment & Settings</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="header-icon-btn"><span
+                            class="material-symbols-outlined text-lg">refresh</span></button>
+                    <div class="flex items-center gap-2 pl-3 border-l border-slate-200">
+                        <div
+                            class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
+                            A</div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+                <!-- Top Actions Row -->
+                <section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Install Software -->
+                    <div
+                        class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 hover:border-blue-200 hover:shadow-md transition group cursor-pointer">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div
+                                class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition">
+                                <span class="material-symbols-outlined text-primary text-2xl"
+                                    style="font-variation-settings:'FILL' 1">download</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">소프트웨어 설치</p>
+                                <p class="text-xs text-slate-400">Install Software</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-4">학생 PC에 소프트웨어를 원격으로 설치합니다. MSI, EXE, 또는 스크립트 패키지를 지원합니다.
+                        </p>
+                        <button
+                            class="w-full h-9 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary-dark transition">
+                            <span class="material-symbols-outlined text-base mr-1 align-middle">add</span>패키지 추가
+                        </button>
+                    </div>
+                    <!-- Push Updates -->
+                    <div
+                        class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 hover:border-emerald-200 hover:shadow-md transition group cursor-pointer">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div
+                                class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition">
+                                <span class="material-symbols-outlined text-emerald-500 text-2xl"
+                                    style="font-variation-settings:'FILL' 1">system_update_alt</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">업데이트 배포</p>
+                                <p class="text-xs text-slate-400">Push Updates</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-4">윈도우 업데이트, 드라이버 업데이트, 에이전트 업데이트를 배포합니다.</p>
+                        <button
+                            class="w-full h-9 border border-emerald-200 text-emerald-600 text-xs font-semibold rounded-lg hover:bg-emerald-50 transition">
+                            <span class="material-symbols-outlined text-base mr-1 align-middle">sync</span>업데이트 확인
+                        </button>
+                    </div>
+                    <!-- Web Access Control -->
+                    <div
+                        class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 hover:border-amber-200 hover:shadow-md transition group cursor-pointer">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div
+                                class="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center group-hover:bg-amber-100 transition">
+                                <span class="material-symbols-outlined text-amber-500 text-2xl"
+                                    style="font-variation-settings:'FILL' 1">shield</span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">웹 접근 제어</p>
+                                <p class="text-xs text-slate-400">Web Access Control</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-500 mb-4">웹사이트 화이트리스트/블랙리스트를 관리하고 필터링 규칙을 설정합니다.</p>
+                        <button
+                            class="w-full h-9 border border-amber-200 text-amber-600 text-xs font-semibold rounded-lg hover:bg-amber-50 transition">
+                            <span class="material-symbols-outlined text-base mr-1 align-middle">tune</span>규칙 관리
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Main Content: Target PCs + Deployment Queue -->
+                <section class="grid grid-cols-1 xl:grid-cols-[280px_1fr] gap-5">
+
+                    <!-- Target PCs Panel -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary text-lg">devices</span>
+                                <h2 class="text-sm font-bold text-slate-800">대상 PC</h2>
+                            </div>
+                            <button class="text-xs text-primary font-medium hover:underline">전체 선택</button>
+                        </div>
+                        <div id="targetPCList" class="p-4 space-y-2 max-h-[500px] overflow-y-auto sidebar-scroll">
+                            <!-- PC checkboxes rendered dynamically by JS -->
+                            <div class="flex flex-col items-center justify-center py-8 text-slate-300">
+                                <span class="material-symbols-outlined text-3xl mb-2">devices</span>
+                                <p class="text-xs text-slate-400">연결된 PC가 없습니다</p>
+                            </div>
+                        </div>
+                        <div class="px-5 py-3 border-t border-slate-100 bg-slate-50">
+                            <p class="text-xs text-slate-400" id="targetCount">0대 선택</p>
+                        </div>
+                    </div>
+
+                    <!-- Deployment Queue -->
+                    <div id="deployQueue" class="space-y-4">
+                        <!-- Active Deployments -->
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                                <div class="flex items-center gap-2">
+                                    <span
+                                        class="material-symbols-outlined text-emerald-500 text-lg">rocket_launch</span>
+                                    <h2 class="text-sm font-bold text-slate-800">활성 배포</h2>
+                                </div>
+                                <span
+                                    class="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-full">진행중</span>
+                            </div>
+                            <div class="p-5">
+                                <div class="flex flex-col items-center justify-center py-8 text-slate-300">
+                                    <span class="material-symbols-outlined text-3xl mb-2">rocket_launch</span>
+                                    <p class="text-xs text-slate-400">활성 배포가 없습니다</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Jobs -->
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-slate-400 text-lg">history</span>
+                                    <h2 class="text-sm font-bold text-slate-800">최근 작업</h2>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs">
+                                    <thead>
+                                        <tr class="bg-slate-50">
+                                            <th class="text-left px-5 py-2.5 font-semibold text-slate-400">작업</th>
+                                            <th class="text-left px-5 py-2.5 font-semibold text-slate-400">대상</th>
+                                            <th class="text-left px-5 py-2.5 font-semibold text-slate-400">시간</th>
+                                            <th class="text-left px-5 py-2.5 font-semibold text-slate-400">상태</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-50">
+                                        <tr>
+                                            <td colspan="4" class="px-5 py-8 text-center text-slate-300">
+                                                <span
+                                                    class="material-symbols-outlined text-2xl block mb-1">history</span>
+                                                작업 기록이 없습니다
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+    <script>
+            (function () {
+                const socket = io({ transports: ['websocket', 'polling'] });
+                let allPCs = [];
+                let selectedTargets = new Set();
+
+                // === Load PCs ===
+                async function loadPCs() {
+                    try {
+                        const res = await fetch('/api/pcs');
+                        const data = await res.json();
+                        allPCs = data.pcs || data || [];
+                        renderTargetList();
+                        updateTargetCount();
+                        loadDeployHistory();
+                    } catch (e) { console.error('Load error:', e); }
+                }
+
+                // === Target PC List ===
+                function renderTargetList() {
+                    const container = document.getElementById('targetPCList');
+                    if (!container) return;
+                    const searchVal = container.parentElement?.querySelector('input')?.value?.toLowerCase() || '';
+                    const filtered = allPCs.filter(pc => (pc.pc_name || pc.name || '').toLowerCase().includes(searchVal));
+
+                    if (filtered.length === 0) {
+                        container.innerHTML = '<div class="flex flex-col items-center justify-center py-8 text-slate-300"><span class="material-symbols-outlined text-3xl mb-2">devices</span><p class="text-xs text-slate-400">연결된 PC가 없습니다</p></div>';
+                        return;
+                    }
+
+                    container.innerHTML = filtered.map(pc => {
+                        const name = pc.pc_name || pc.name;
+                        const isOn = pc.status === 'online';
+                        const checked = selectedTargets.has(name);
+                        return `
+                <label class="flex items-center gap-3 px-4 py-2.5 hover:bg-slate-50 rounded-lg cursor-pointer transition">
+                    <input type="checkbox" class="w-4 h-4 rounded border-slate-300 text-primary focus:ring-primary/30 pc-check" data-name="${name}" ${checked ? 'checked' : ''}>
+                    <div class="flex items-center gap-2 flex-1">
+                        <span class="w-2 h-2 rounded-full ${isOn ? 'bg-emerald-400' : 'bg-slate-300'}"></span>
+                        <span class="text-sm text-slate-700 font-medium">${name}</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-mono">${pc.ip_address || '—'}</span>
+                </label>`;
+                    }).join('');
+
+                    container.querySelectorAll('.pc-check').forEach(cb => {
+                        cb.addEventListener('change', (e) => {
+                            if (e.target.checked) selectedTargets.add(e.target.dataset.name);
+                            else selectedTargets.delete(e.target.dataset.name);
+                            updateTargetCount();
+                        });
+                    });
+                }
+
+                function updateTargetCount() {
+                    const countEl = document.getElementById('targetCount');
+                    if (countEl) countEl.textContent = `${selectedTargets.size}대 선택`;
+                }
+
+                // === Select All / Deselect ===
+                document.querySelectorAll('button').forEach(btn => {
+                    if (btn.textContent.includes('전체 선택')) {
+                        btn.addEventListener('click', () => {
+                            allPCs.forEach(pc => selectedTargets.add(pc.pc_name || pc.name));
+                            renderTargetList(); updateTargetCount();
+                        });
+                    }
+                    if (btn.textContent.includes('선택 해제')) {
+                        btn.addEventListener('click', () => {
+                            selectedTargets.clear();
+                            renderTargetList(); updateTargetCount();
+                        });
+                    }
+                });
+
+                // === Deploy Actions ===
+                // "패키지 추가" button
+                document.querySelectorAll('button').forEach(btn => {
+                    if (btn.textContent.includes('패키지 추가')) {
+                        btn.addEventListener('click', async () => {
+                            const pkg = prompt('설치할 패키지명 (예: python3, nodejs, vscode):');
+                            if (!pkg || selectedTargets.size === 0) { showToast(selectedTargets.size === 0 ? 'PC를 먼저 선택하세요' : '패키지명을 입력하세요', true); return; }
+                            for (const name of selectedTargets) {
+                                try {
+                                    await fetch(`/api/pcs/${encodeURIComponent(name)}/command`, {
+                                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ command: 'install', package: pkg })
+                                    });
+                                } catch (e) { }
+                            }
+                            showToast(`${pkg} 설치 명령 전송 (${selectedTargets.size}대)`);
+                        });
+                    }
+                    if (btn.textContent.includes('업데이트 확인')) {
+                        btn.addEventListener('click', async () => {
+                            if (selectedTargets.size === 0) { showToast('PC를 먼저 선택하세요', true); return; }
+                            for (const name of selectedTargets) {
+                                try {
+                                    await fetch(`/api/pcs/${encodeURIComponent(name)}/command`, {
+                                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ command: 'update-check' })
+                                    });
+                                } catch (e) { }
+                            }
+                            showToast(`업데이트 확인 요청 (${selectedTargets.size}대)`);
+                        });
+                    }
+                    if (btn.textContent.includes('규칙 관리')) {
+                        btn.addEventListener('click', async () => {
+                            const url = prompt('차단할 URL (예: youtube.com):');
+                            if (!url) return;
+                            try {
+                                await fetch('/api/blocked-sites', {
+                                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ url, reason: '관리자 차단' })
+                                });
+                                showToast(`${url} 차단 규칙 추가됨`);
+                            } catch (e) { showToast('규칙 추가 실패', true); }
+                        });
+                    }
+                });
+
+                // === Deploy History ===
+                async function loadDeployHistory() {
+                    try {
+                        const res = await fetch('/api/logs?limit=10&type=deploy');
+                        const data = await res.json();
+                        const logs = data.logs || data || [];
+                        renderHistory(logs);
+                    } catch (e) { }
+                }
+
+                function renderHistory(logs) {
+                    const container = document.getElementById('deployQueue');
+                    if (!container) return;
+                    const recentSection = container.querySelector('.space-y-2') || container;
+
+                    if (logs.length === 0) {
+                        recentSection.innerHTML = '<div class="flex flex-col items-center justify-center py-8 text-slate-300"><span class="material-symbols-outlined text-3xl mb-2">history</span><p class="text-xs text-slate-400">배포 기록이 없습니다</p></div>';
+                        return;
+                    }
+
+                    recentSection.innerHTML = logs.map(log => {
+                        const time = new Date(log.timestamp || log.created_at).toLocaleString('ko-KR');
+                        const status = log.status || 'completed';
+                        const statusColor = status === 'completed' ? 'text-emerald-500' : (status === 'failed' ? 'text-red-500' : 'text-amber-500');
+                        const statusIcon = status === 'completed' ? 'check_circle' : (status === 'failed' ? 'error' : 'pending');
+                        return `
+                <div class="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                    <span class="material-symbols-outlined ${statusColor}">${statusIcon}</span>
+                    <div class="flex-1">
+                        <p class="text-xs font-medium text-slate-700">${log.details || log.action || '배포 작업'}</p>
+                        <p class="text-[10px] text-slate-400">${log.pc_name || '—'} · ${time}</p>
+                    </div>
+                </div>`;
+                    }).join('');
+                }
+
+                // === Search ===
+                const searchInput = document.querySelector('input[placeholder="PC 검색..."]');
+                if (searchInput) searchInput.addEventListener('input', renderTargetList);
+
+                // === Refresh ===
+                document.querySelectorAll('button').forEach(btn => {
+                    if (btn.querySelector('.material-symbols-outlined')?.textContent === 'refresh') {
+                        btn.addEventListener('click', loadPCs);
+                    }
+                });
+
+                // === WebSocket ===
+                socket.on('pc-updated', (data) => {
+                    const name = data.pc_name || data.name;
+                    const idx = allPCs.findIndex(p => (p.pc_name || p.name) === name);
+                    if (idx >= 0) allPCs[idx] = { ...allPCs[idx], ...data };
+                    else allPCs.push(data);
+                    renderTargetList(); updateTargetCount();
+                });
+                socket.on('pc-registered', (data) => { allPCs.push(data); renderTargetList(); });
+
+                // === Toast ===
+                function showToast(msg, isError = false) {
+                    const t = document.createElement('div');
+                    t.className = `fixed bottom-5 right-5 px-4 py-3 rounded-xl shadow-lg text-sm font-medium z-50 ${isError ? 'bg-red-500 text-white' : 'bg-white text-slate-800 border border-slate-200'}`;
+                    t.textContent = msg; document.body.appendChild(t);
+                    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
+                }
+
+                loadPCs();
+                setInterval(loadPCs, 30000);
+            })();
+    </script>
+</body>
+
+</html>

@@ -131,16 +131,9 @@ class EnterpriseDashboard {
     }
 
     updateConnectionStatus(connected) {
-        const statusDot = document.querySelector('.status-dot');
-        const statusText = document.querySelector('.system-status span');
-
-        if (connected) {
-            statusDot.classList.add('online');
-            statusText.textContent = '시스템 정상';
-        } else {
-            statusDot.classList.remove('online');
-            statusText.textContent = '연결 끊김';
-        }
+        const statusEl = document.querySelector('.system-status, [data-connection-status]');
+        if (!statusEl) return;
+        // Sidebar already shows static status; no action needed for light theme
     }
 
     // ========================================
@@ -211,13 +204,10 @@ class EnterpriseDashboard {
 
         if (this.pcs.size === 0) {
             grid.innerHTML = `
-                <div class="pc-empty-state">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <rect x="2" y="3" width="20" height="14" rx="2"></rect>
-                        <path d="M8 21h8M12 17v4"></path>
-                    </svg>
-                    <p>연결된 PC가 없습니다</p>
-                    <span>PC 에이전트를 실행하면 자동으로 연결됩니다</span>
+                <div class="col-span-full flex flex-col items-center justify-center py-16 text-center">
+                    <span class="material-symbols-outlined text-5xl text-slate-300 mb-3">monitor</span>
+                    <p class="text-sm font-semibold text-slate-500">연결된 PC가 없습니다</p>
+                    <span class="text-xs text-slate-400 mt-1">PC 에이전트를 실행하면 자동으로 연결됩니다</span>
                 </div>
             `;
             return;
@@ -241,34 +231,33 @@ class EnterpriseDashboard {
         const cpuUsage = pc.cpu_usage || 0;
         const memoryUsage = pc.memory_usage || 0;
 
-        const cpuClass = cpuUsage > 80 ? 'critical' : cpuUsage > 60 ? 'high' : '';
-        const memClass = memoryUsage > 80 ? 'critical' : memoryUsage > 60 ? 'high' : '';
+        const cpuColor = cpuUsage > 80 ? 'bg-red-500' : cpuUsage > 60 ? 'bg-amber-400' : 'bg-primary';
+        const memColor = memoryUsage > 80 ? 'bg-red-500' : memoryUsage > 60 ? 'bg-amber-400' : 'bg-emerald-400';
+        const statusDot = isOnline ? 'bg-emerald-400 animate-pulse' : 'bg-slate-300';
+        const statusText = isOnline ? '온라인' : '오프라인';
+        const statusBadge = isOnline ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400';
+        const cardBorder = isOnline ? 'border-slate-200 hover:border-primary/40 hover:shadow-md' : 'border-slate-200 opacity-60';
 
         return `
-            <div class="pc-card ${isOnline ? 'online' : 'offline'}" data-pc-name="${pc.pc_name}">
-                <div class="pc-card-header">
-                    <div class="pc-icon">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="2" y="3" width="20" height="14" rx="2"></rect>
-                            <path d="M8 21h8M12 17v4"></path>
-                        </svg>
+            <div class="pc-card group bg-white rounded-xl border ${cardBorder} p-4 cursor-pointer transition-all duration-200" data-pc-name="${pc.pc_name}">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary text-lg">monitor</span>
+                        <span class="text-sm font-semibold text-slate-800">${pc.pc_name}</span>
                     </div>
-                    <div class="pc-status ${isOnline ? 'online' : 'offline'}"></div>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusBadge}">
+                        <span class="w-1.5 h-1.5 rounded-full ${statusDot}"></span>${statusText}
+                    </span>
                 </div>
-                <div class="pc-name">${pc.pc_name}</div>
-                <div class="pc-ip">${pc.ip_address || 'N/A'}</div>
-                <div class="pc-stats">
-                    <div class="pc-stat">
-                        <div class="pc-stat-label">CPU</div>
-                        <div class="pc-stat-bar">
-                            <div class="pc-stat-fill ${cpuClass}" style="width: ${cpuUsage}%"></div>
-                        </div>
+                <p class="text-[10px] text-slate-400 mb-3">${pc.ip_address || 'N/A'}</p>
+                <div class="space-y-2">
+                    <div>
+                        <div class="flex justify-between text-[10px] mb-0.5"><span class="text-slate-400">CPU</span><span class="font-semibold text-slate-600">${cpuUsage.toFixed(0)}%</span></div>
+                        <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="${cpuColor} h-full rounded-full transition-all" style="width:${cpuUsage}%"></div></div>
                     </div>
-                    <div class="pc-stat">
-                        <div class="pc-stat-label">MEM</div>
-                        <div class="pc-stat-bar">
-                            <div class="pc-stat-fill memory ${memClass}" style="width: ${memoryUsage}%"></div>
-                        </div>
+                    <div>
+                        <div class="flex justify-between text-[10px] mb-0.5"><span class="text-slate-400">MEM</span><span class="font-semibold text-slate-600">${memoryUsage.toFixed(0)}%</span></div>
+                        <div class="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden"><div class="${memColor} h-full rounded-full transition-all" style="width:${memoryUsage}%"></div></div>
                     </div>
                 </div>
             </div>
@@ -290,13 +279,10 @@ class EnterpriseDashboard {
     // ========================================
     renderActivities() {
         const list = document.getElementById('activityList');
+        if (!list) return;
 
         if (this.activities.length === 0) {
-            list.innerHTML = `
-                <div class="activity-empty">
-                    <p>최근 활동이 없습니다</p>
-                </div>
-            `;
+            list.innerHTML = `<div class="py-8 text-center text-xs text-slate-400">최근 활동이 없습니다</div>`;
             return;
         }
 
@@ -307,17 +293,20 @@ class EnterpriseDashboard {
     }
 
     createActivityItem(activity) {
-        const iconClass = this.getActivityIconClass(activity.activity_type);
+        const iconMap = { login: 'login', logout: 'logout', program: 'terminal', warning: 'warning' };
+        const colorMap = { login: 'text-emerald-500 bg-emerald-50', logout: 'text-slate-400 bg-slate-100', program: 'text-primary bg-blue-50', warning: 'text-amber-500 bg-amber-50' };
+        const icon = iconMap[activity.activity_type] || 'terminal';
+        const color = colorMap[activity.activity_type] || 'text-primary bg-blue-50';
         const timeAgo = this.formatTimeAgo(activity.timestamp);
 
         return `
-            <div class="activity-item">
-                <div class="activity-icon ${iconClass}">
-                    ${this.getActivityIcon(activity.activity_type)}
+            <div class="flex items-center gap-3 py-2.5 border-b border-slate-50 last:border-0">
+                <div class="w-8 h-8 rounded-lg ${color} flex items-center justify-center flex-shrink-0">
+                    <span class="material-symbols-outlined text-sm">${icon}</span>
                 </div>
-                <div class="activity-content">
-                    <div class="activity-title">${activity.details || activity.activity_type}</div>
-                    <div class="activity-meta">${activity.pc_name} • ${timeAgo}</div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-xs font-medium text-slate-700 truncate">${activity.details || activity.activity_type}</p>
+                    <p class="text-[10px] text-slate-400">${activity.pc_name} · ${timeAgo}</p>
                 </div>
             </div>
         `;
@@ -415,7 +404,7 @@ class EnterpriseDashboard {
                         position: 'top',
                         align: 'end',
                         labels: {
-                            color: 'rgba(255, 255, 255, 0.7)',
+                            color: '#64748b',
                             usePointStyle: true,
                             pointStyle: 'circle',
                             padding: 20,
@@ -425,10 +414,10 @@ class EnterpriseDashboard {
                         }
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(26, 26, 37, 0.95)',
-                        titleColor: '#fff',
-                        bodyColor: 'rgba(255, 255, 255, 0.7)',
-                        borderColor: 'rgba(255, 255, 255, 0.1)',
+                        backgroundColor: 'rgba(255,255,255,0.95)',
+                        titleColor: '#1e293b',
+                        bodyColor: '#64748b',
+                        borderColor: '#e2e8f0',
                         borderWidth: 1,
                         padding: 12,
                         cornerRadius: 8,
@@ -441,11 +430,11 @@ class EnterpriseDashboard {
                 scales: {
                     x: {
                         grid: {
-                            color: 'rgba(255, 255, 255, 0.05)',
+                            color: '#f1f5f9',
                             drawBorder: false
                         },
                         ticks: {
-                            color: 'rgba(255, 255, 255, 0.4)',
+                            color: '#94a3b8',
                             font: {
                                 size: 11
                             }
@@ -455,11 +444,11 @@ class EnterpriseDashboard {
                         min: 0,
                         max: 100,
                         grid: {
-                            color: 'rgba(255, 255, 255, 0.05)',
+                            color: '#f1f5f9',
                             drawBorder: false
                         },
                         ticks: {
-                            color: 'rgba(255, 255, 255, 0.4)',
+                            color: '#94a3b8',
                             font: {
                                 size: 11
                             },
@@ -579,28 +568,31 @@ class EnterpriseDashboard {
         const container = document.getElementById('toastContainer');
         if (!container) return;
 
-        // Limit to 5 toasts max
         while (container.children.length >= 5) {
             container.firstChild.remove();
         }
 
+        const colorMap = { success: 'border-emerald-200 bg-emerald-50', error: 'border-red-200 bg-red-50', warning: 'border-amber-200 bg-amber-50', info: 'border-blue-200 bg-blue-50' };
+        const iconMap = { success: 'check_circle', error: 'cancel', warning: 'warning', info: 'info' };
+        const iconColor = { success: 'text-emerald-500', error: 'text-red-500', warning: 'text-amber-500', info: 'text-primary' };
+
         const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
+        toast.className = `flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg ${colorMap[type] || colorMap.info} animate-slide-in`;
         toast.innerHTML = `
-            <div class="toast-icon">${this.getToastIcon(type)}</div>
-            <div class="toast-content">
-                <div class="toast-title">${title}</div>
-                <div class="toast-message">${message}</div>
+            <span class="material-symbols-outlined ${iconColor[type] || iconColor.info}" style="font-variation-settings:'FILL' 1">${iconMap[type] || 'info'}</span>
+            <div class="flex-1 min-w-0">
+                <p class="text-xs font-semibold text-slate-800">${title}</p>
+                <p class="text-[10px] text-slate-500 truncate">${message}</p>
             </div>
-            <button class="toast-close" onclick="this.closest('.toast').remove()">&times;</button>
-            <div class="toast-progress"></div>
+            <button class="text-slate-400 hover:text-slate-600 text-sm" onclick="this.closest('div').remove()">&times;</button>
         `;
 
         container.appendChild(toast);
 
-        // Auto-remove with slide-out animation
         setTimeout(() => {
-            toast.classList.add('removing');
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateX(100%)';
+            toast.style.transition = 'all 0.3s ease';
             setTimeout(() => toast.remove(), 300);
         }, 4000);
     }
@@ -626,7 +618,7 @@ class EnterpriseDashboard {
         }
 
         const processList = document.getElementById('processList');
-        processList.innerHTML = '<p class="loading">프로세스 조회 중...</p>';
+        processList.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">프로세스 조회 중...</p>';
 
         try {
             const response = await fetch(`/api/pcs/${this.selectedPC.ip_address}/processes`);
@@ -637,24 +629,23 @@ class EnterpriseDashboard {
                     .filter(p => p.Name)
                     .slice(0, 30)
                     .map(p => `
-                        <div class="process-item">
-                            <span class="process-name">${p.Name}</span>
-                            <span class="process-cpu">${p.CPU ? p.CPU.toFixed(1) : 0}%</span>
-                            <button class="btn-kill" data-process="${p.Name}" data-pid="${p.Id}">종료</button>
+                        <div class="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-slate-50 text-xs">
+                            <span class="font-medium text-slate-700">${p.Name}</span>
+                            <span class="text-slate-400">${p.CPU ? p.CPU.toFixed(1) : 0}%</span>
+                            <button class="btn-kill px-2 py-1 bg-red-50 text-red-500 rounded-md text-[10px] font-semibold hover:bg-red-100" data-process="${p.Name}" data-pid="${p.Id}">종료</button>
                         </div>
                     `).join('');
 
-                // Bind kill buttons
                 processList.querySelectorAll('.btn-kill').forEach(btn => {
                     btn.addEventListener('click', () => {
                         this.killProcess(btn.dataset.process, btn.dataset.pid);
                     });
                 });
             } else {
-                processList.innerHTML = '<p class="process-empty">프로세스를 가져올 수 없습니다</p>';
+                processList.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">프로세스를 가져올 수 없습니다</p>';
             }
         } catch (error) {
-            processList.innerHTML = '<p class="process-empty">연결 오류</p>';
+            processList.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">연결 오류</p>';
             this.showToast('오류', '프로세스 조회 실패', 'error');
         }
     }
@@ -1050,18 +1041,18 @@ class EnterpriseDashboard {
         container.style.display = 'block';
 
         if (!pcs || pcs.length === 0) {
-            container.innerHTML = '<p class="scan-empty">발견된 PC가 없습니다</p>';
+            container.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">발견된 PC가 없습니다</p>';;
             return;
         }
 
         container.innerHTML = `
-            <p class="list-header">발견된 PC 목록 (클릭하여 선택)</p>
-            <div class="scanned-pc-grid">
+            <p class="text-xs font-semibold text-slate-600 mb-2">발견된 PC 목록 (클릭하여 선택)</p>
+            <div class="space-y-2">
                 ${pcs.map(pc => `
-                    <div class="scanned-pc-item ${pc.winrmReady ? 'ready' : 'not-ready'}" data-ip="${pc.ip}" data-ready="${pc.winrmReady}">
-                        <span class="pc-ip">${pc.ip}</span>
-                        <span class="pc-status">${pc.winrmReady ? '✅ 배포 가능' : '⚠️ WinRM 필요'}</span>
-                        ${!pc.winrmReady ? `<button class="btn-setup-winrm" data-ip="${pc.ip}" title="원격 WinRM 설정">🔧 설정</button>` : ''}
+                    <div class="scanned-pc-item flex items-center justify-between p-3 rounded-lg border cursor-pointer transition ${pc.winrmReady ? 'border-emerald-200 bg-emerald-50/50 hover:border-emerald-300' : 'border-amber-200 bg-amber-50/50 hover:border-amber-300'}" data-ip="${pc.ip}" data-ready="${pc.winrmReady}">
+                        <span class="text-xs font-mono font-medium text-slate-700">${pc.ip}</span>
+                        <span class="text-[10px] font-semibold ${pc.winrmReady ? 'text-emerald-600' : 'text-amber-600'}">${pc.winrmReady ? '✅ 배포 가능' : '⚠️ WinRM 필요'}</span>
+                        ${!pc.winrmReady ? `<button class="btn-setup-winrm px-2 py-1 bg-amber-100 text-amber-700 rounded text-[10px] font-semibold hover:bg-amber-200" data-ip="${pc.ip}">🔧 설정</button>` : ''}
                     </div>
                 `).join('')}
             </div>
@@ -1117,125 +1108,49 @@ class EnterpriseDashboard {
     }
 
     showSetupInstructions(targetIP) {
-        // Create and show a helpful modal with setup instructions
         const existingModal = document.getElementById('winrmHelpModal');
         if (existingModal) existingModal.remove();
 
         const modal = document.createElement('div');
         modal.id = 'winrmHelpModal';
-        modal.className = 'modal-overlay active';
+        modal.className = 'fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50';
         modal.innerHTML = `
-            <div class="modal" style="max-width: 600px;">
-                <div class="modal-header">
-                    <h3>🔧 ${targetIP} WinRM 설정 방법</h3>
-                    <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button>
+            <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg mx-4 overflow-hidden">
+                <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                    <h3 class="text-sm font-bold text-slate-800">🔧 ${targetIP} WinRM 설정 방법</h3>
+                    <button class="text-slate-400 hover:text-slate-600 text-lg" onclick="this.closest('#winrmHelpModal').remove()">×</button>
                 </div>
-                <div class="modal-body">
-                    <div class="setup-instructions">
-                        <div class="instruction-step">
-                            <span class="step-number">1</span>
-                            <div class="step-content">
-                                <strong>학생 PC로 이동</strong>
-                                <p>IP: <code>${targetIP}</code> PC로 직접 가세요</p>
-                            </div>
-                        </div>
-                        <div class="instruction-step">
-                            <span class="step-number">2</span>
-                            <div class="step-content">
-                                <strong>설정 파일 실행</strong>
-                                <p>아래 중 하나를 선택:</p>
-                                <ul>
-                                    <li>📁 <code>D:\\Dark_Virus\\Enterprise-PC-Management\\📱 학생PC 설정.bat</code></li>
-                                    <li>💾 USB에 복사하여 학생 PC에서 실행</li>
-                                    <li>🌐 공유 폴더에서 실행</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="instruction-step">
-                            <span class="step-number">3</span>
-                            <div class="step-content">
-                                <strong>관리자 권한으로 실행</strong>
-                                <p>파일을 <strong>우클릭 → 관리자 권한으로 실행</strong></p>
-                            </div>
-                        </div>
-                        <div class="instruction-step success">
-                            <span class="step-number">✓</span>
-                            <div class="step-content">
-                                <strong>완료!</strong>
-                                <p>설정 완료 후 이 PC가 "배포 가능"으로 변경됩니다</p>
-                            </div>
+                <div class="p-6 space-y-3">
+                    <div class="flex gap-3 p-4 bg-slate-50 rounded-xl border-l-3 border-primary">
+                        <span class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold flex-shrink-0">1</span>
+                        <div><strong class="text-sm text-slate-800 block mb-1">학생 PC로 이동</strong><p class="text-xs text-slate-500">IP: <code class="bg-slate-100 px-1.5 py-0.5 rounded text-xs font-mono">${targetIP}</code> PC로 직접 가세요</p></div>
+                    </div>
+                    <div class="flex gap-3 p-4 bg-slate-50 rounded-xl border-l-3 border-primary">
+                        <span class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold flex-shrink-0">2</span>
+                        <div><strong class="text-sm text-slate-800 block mb-1">설정 파일 실행</strong><p class="text-xs text-slate-500">아래 중 하나를 선택:</p>
+                            <ul class="text-xs text-slate-500 mt-1 space-y-1 ml-4 list-disc">
+                                <li>📁 <code class="bg-slate-100 px-1 rounded text-[10px] font-mono">학생PC 설정.bat</code></li>
+                                <li>💾 USB에 복사하여 학생 PC에서 실행</li>
+                                <li>🌐 공유 폴더에서 실행</li>
+                            </ul>
                         </div>
                     </div>
-                    <div class="setup-actions" style="margin-top: 20px;">
-                        <button class="btn-secondary" onclick="this.closest('.modal-overlay').remove()">닫기</button>
-                        <button class="btn-primary" onclick="dashboard.copySetupCommand()">📋 PowerShell 명령 복사</button>
+                    <div class="flex gap-3 p-4 bg-slate-50 rounded-xl border-l-3 border-primary">
+                        <span class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold flex-shrink-0">3</span>
+                        <div><strong class="text-sm text-slate-800 block mb-1">관리자 권한으로 실행</strong><p class="text-xs text-slate-500">파일을 <strong>우클릭 → 관리자 권한으로 실행</strong></p></div>
+                    </div>
+                    <div class="flex gap-3 p-4 bg-emerald-50 rounded-xl border-l-3 border-emerald-400">
+                        <span class="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-sm font-bold flex-shrink-0">✓</span>
+                        <div><strong class="text-sm text-slate-800 block mb-1">완료!</strong><p class="text-xs text-slate-500">설정 완료 후 이 PC가 "배포 가능"으로 변경됩니다</p></div>
+                    </div>
+                    <div class="flex gap-2 mt-4 pt-4 border-t border-slate-100">
+                        <button class="flex-1 px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-200 transition" onclick="this.closest('#winrmHelpModal').remove()">닫기</button>
+                        <button class="flex-1 px-4 py-2.5 bg-primary text-white rounded-xl text-xs font-semibold hover:bg-primary-dark transition" onclick="dashboard.copySetupCommand()">📋 PowerShell 명령 복사</button>
                     </div>
                 </div>
             </div>
         `;
         document.body.appendChild(modal);
-
-        // Add styles if not present
-        if (!document.getElementById('winrmHelpStyles')) {
-            const styles = document.createElement('style');
-            styles.id = 'winrmHelpStyles';
-            styles.textContent = `
-                .setup-instructions {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 16px;
-                }
-                .instruction-step {
-                    display: flex;
-                    gap: 16px;
-                    padding: 16px;
-                    background: var(--bg-deep);
-                    border-radius: 12px;
-                    border-left: 3px solid var(--accent-primary);
-                }
-                .instruction-step.success {
-                    border-left-color: var(--status-online);
-                    background: rgba(16, 185, 129, 0.1);
-                }
-                .step-number {
-                    width: 32px;
-                    height: 32px;
-                    background: var(--accent-primary);
-                    color: white;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-weight: 600;
-                    flex-shrink: 0;
-                }
-                .instruction-step.success .step-number {
-                    background: var(--status-online);
-                }
-                .step-content strong {
-                    display: block;
-                    margin-bottom: 6px;
-                    color: var(--text-primary);
-                }
-                .step-content p, .step-content ul {
-                    color: var(--text-secondary);
-                    font-size: 0.9rem;
-                    margin: 0;
-                }
-                .step-content ul {
-                    margin-top: 8px;
-                    padding-left: 20px;
-                }
-                .step-content code {
-                    background: var(--bg-elevated);
-                    padding: 2px 6px;
-                    border-radius: 4px;
-                    font-family: 'Consolas', monospace;
-                    font-size: 0.85rem;
-                }
-            `;
-            document.head.appendChild(styles);
-        }
     }
 
     copySetupCommand() {
@@ -1314,19 +1229,19 @@ class EnterpriseDashboard {
         };
 
         const statusClasses = {
-            'PROGRESS': 'step-progress',
-            'OK': 'step-ok',
-            'FAIL': 'step-fail',
-            'WARN': 'step-warn'
+            'PROGRESS': 'border-blue-200 bg-blue-50',
+            'OK': 'border-emerald-200 bg-emerald-50',
+            'FAIL': 'border-red-200 bg-red-50',
+            'WARN': 'border-amber-200 bg-amber-50'
         };
 
         container.innerHTML = steps.map(step => `
-                < div class="deploy-step ${statusClasses[step.status] || ''}" >
-                <span class="step-icon">${statusIcons[step.status] || '•'}</span>
-                <span class="step-name">${step.name}</span>
-                ${step.message ? `<span class="step-message">${step.message}</span>` : ''}
-            </div >
-                `).join('');
+            <div class="flex items-center gap-3 px-3 py-2.5 rounded-lg border text-xs ${statusClasses[step.status] || 'border-slate-200 bg-slate-50'}">
+                <span>${statusIcons[step.status] || '•'}</span>
+                <span class="font-medium text-slate-700">${step.name}</span>
+                ${step.message ? `<span class="text-slate-400 ml-auto truncate">${step.message}</span>` : ''}
+            </div>
+        `).join('');
     }
 
     async checkConnection() {
@@ -1335,12 +1250,12 @@ class EnterpriseDashboard {
 
         if (!ip) {
             statusEl.textContent = 'IP 주소를 입력하세요';
-            statusEl.className = 'connection-status offline';
+            statusEl.className = 'text-xs text-slate-400';
             return;
         }
 
         statusEl.textContent = '연결 확인 중...';
-        statusEl.className = 'connection-status checking';
+        statusEl.className = 'text-xs text-amber-500';
 
         try {
             const response = await fetch(`/ api / deploy / check / ${ip} `);
@@ -1348,14 +1263,14 @@ class EnterpriseDashboard {
 
             if (result.reachable) {
                 statusEl.textContent = '✓ PC 온라인 - 연결 가능';
-                statusEl.className = 'connection-status online';
+                statusEl.className = 'text-xs text-emerald-500';
             } else {
                 statusEl.textContent = '✗ PC 오프라인 또는 접근 불가';
-                statusEl.className = 'connection-status offline';
+                statusEl.className = 'text-xs text-red-500';
             }
         } catch (error) {
             statusEl.textContent = '연결 확인 실패';
-            statusEl.className = 'connection-status offline';
+            statusEl.className = 'text-xs text-red-500';
         }
     }
 
@@ -1668,7 +1583,7 @@ class EnterpriseDashboard {
     addOneClickLog(message) {
         const log = document.getElementById('oneClickLog');
         const time = new Date().toLocaleTimeString('ko-KR');
-        log.innerHTML += `<div style="margin-bottom: 4px;"><span style="color: var(--text-muted);">[${time}]</span> ${message}</div>`;
+        log.innerHTML += `<div class="mb-1 text-xs"><span class="text-slate-400">[${time}]</span> ${message}</div>`;
         log.scrollTop = log.scrollHeight;
     }
 
@@ -1679,18 +1594,18 @@ class EnterpriseDashboard {
 
         const summary = data.results || data.summary || {};
         document.getElementById('oneClickResultSummary').innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: center;">
-                <div style="background: var(--bg-deep); padding: 16px; border-radius: 12px;">
-                    <div style="font-size: 2rem; font-weight: 700; color: var(--accent-primary);">${summary.scanned || summary.scanned?.length || 0}</div>
-                    <div style="color: var(--text-secondary);">발견된 PC</div>
+            <div class="grid grid-cols-3 gap-4 text-center">
+                <div class="bg-slate-50 p-4 rounded-xl">
+                    <div class="text-2xl font-bold text-primary">${summary.scanned || summary.scanned?.length || 0}</div>
+                    <div class="text-xs text-slate-500 mt-1">발견된 PC</div>
                 </div>
-                <div style="background: var(--bg-deep); padding: 16px; border-radius: 12px;">
-                    <div style="font-size: 2rem; font-weight: 700; color: var(--status-online);">${summary.installed || summary.agentInstalled?.length || 0}</div>
-                    <div style="color: var(--text-secondary);">설치 성공</div>
+                <div class="bg-emerald-50 p-4 rounded-xl">
+                    <div class="text-2xl font-bold text-emerald-600">${summary.installed || summary.agentInstalled?.length || 0}</div>
+                    <div class="text-xs text-slate-500 mt-1">설치 성공</div>
                 </div>
-                <div style="background: var(--bg-deep); padding: 16px; border-radius: 12px;">
-                    <div style="font-size: 2rem; font-weight: 700; color: var(--status-offline);">${summary.failed || summary.setupFailed?.length || 0}</div>
-                    <div style="color: var(--text-secondary);">실패</div>
+                <div class="bg-red-50 p-4 rounded-xl">
+                    <div class="text-2xl font-bold text-red-500">${summary.failed || summary.setupFailed?.length || 0}</div>
+                    <div class="text-xs text-slate-500 mt-1">실패</div>
                 </div>
             </div>
         `;

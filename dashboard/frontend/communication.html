@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>커뮤니케이션 — Enterprise PC Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2563eb", "primary-dark": "#1e40af", "primary-light": "#dbeafe",
+                        "secondary": "#64748b", "bg-base": "#f1f5f9", "surface": "#ffffff", "border-c": "#e2e8f0",
+                    },
+                    fontFamily: { "display": ["Inter", "sans-serif"], "body": ["Inter", "sans-serif"] },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1rem" },
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="bg-bg-base font-display text-slate-800 antialiased overflow-hidden">
+    <div class="flex h-screen w-full overflow-hidden">
+
+        <!-- Sidebar -->
+        <aside class="hidden md:flex flex-col w-64 bg-white border-r border-border-c flex-shrink-0 shadow-sm z-10">
+            <div class="flex items-center gap-3 px-5 py-5 border-b border-slate-100">
+                <div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center"><span
+                        class="material-symbols-outlined text-white text-xl"
+                        style="font-variation-settings:'FILL' 1">dashboard</span></div>
+                <div>
+                    <p class="text-sm font-bold text-slate-800 leading-tight">Enterprise</p>
+                    <p class="text-xs text-slate-400 leading-tight">PC Manager</p>
+                </div>
+            </div>
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto sidebar-scroll">
+                <p class="px-3 pb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Overview</p>
+                <a href="index.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">space_dashboard</span><span>대시보드</span></a>
+                <a href="classroom.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">grid_view</span><span>교실 모니터링</span></a>
+                <a href="student.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">person_search</span><span>학생 활동 로그</span></a>
+                <p class="px-3 pt-5 pb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Management
+                </p>
+                <a href="communication.html" class="nav-link active"><span
+                        class="material-symbols-outlined text-[20px]">forum</span><span>커뮤니케이션</span></a>
+                <a href="deployment.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">deployed_code</span><span>배포 & 설정</span></a>
+                <a href="analytics.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">monitoring</span><span>AI 분석</span></a>
+                <p class="px-3 pt-5 pb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">System</p>
+                <a href="#" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">settings</span><span>설정</span></a>
+            </nav>
+            <div class="px-5 py-4 border-t border-slate-100">
+                <div class="flex items-center gap-2 text-xs text-slate-400"><span
+                        class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span>시스템 정상</span></div>
+                <p class="text-[10px] text-slate-300 mt-1">v4.0.0</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col h-full overflow-hidden relative bg-slate-50/50">
+            <header
+                class="flex items-center justify-between px-6 h-16 bg-white/80 backdrop-blur border-b border-border-c flex-shrink-0">
+                <div>
+                    <h1 class="text-lg font-bold text-slate-800">커뮤니케이션</h1>
+                    <p class="text-xs text-slate-400 -mt-0.5">Admin–Student Communication Center</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="header-icon-btn"><span
+                            class="material-symbols-outlined text-lg">refresh</span></button>
+                    <div class="flex items-center gap-2 pl-3 border-l border-slate-200">
+                        <div
+                            class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
+                            A</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Chat Layout -->
+            <div class="flex-1 flex overflow-hidden">
+
+                <!-- Student List Sidebar -->
+                <div class="w-72 bg-white border-r border-slate-100 flex flex-col flex-shrink-0">
+                    <div class="p-4 border-b border-slate-100">
+                        <div class="relative">
+                            <span
+                                class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-base">search</span>
+                            <input type="text" placeholder="학생 검색..."
+                                class="w-full h-9 pl-9 pr-3 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-slate-300">
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-y-auto sidebar-scroll">
+                        <!-- Student Item - Active -->
+                        <div
+                            class="flex items-center gap-3 px-4 py-3 bg-primary/5 border-l-2 border-primary cursor-pointer">
+                            <div class="relative flex-shrink-0">
+                                <div
+                                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-sm font-bold">
+                                    김</div>
+                                <span
+                                    class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white"></span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-sm font-semibold text-slate-800 truncate">—</p>
+                                    <span class="text-[10px] text-slate-400">2분 전</span>
+                                </div>
+                                <p class="text-xs text-slate-400 truncate">—</p>
+                            </div>
+                        </div>
+                        <!-- Student Item -->
+                        <div class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 cursor-pointer transition">
+                            <div class="relative flex-shrink-0">
+                                <div
+                                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white text-sm font-bold">
+                                    이</div>
+                                <span
+                                    class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white"></span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-sm font-semibold text-slate-800 truncate">—</p>
+                                    <span class="text-[10px] text-slate-400">5분 전</span>
+                                </div>
+                                <p class="text-xs text-slate-400 truncate">—</p>
+                            </div>
+                            <span
+                                class="w-5 h-5 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center flex-shrink-0">1</span>
+                        </div>
+                        <!-- Student Item -->
+                        <div class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 cursor-pointer transition">
+                            <div class="relative flex-shrink-0">
+                                <div
+                                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center text-white text-sm font-bold">
+                                    박</div>
+                                <span
+                                    class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-slate-300 border-2 border-white"></span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-sm font-semibold text-slate-800 truncate">—</p>
+                                    <span class="text-[10px] text-slate-400">30분 전</span>
+                                </div>
+                                <p class="text-xs text-slate-400 truncate">—</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 cursor-pointer transition">
+                            <div class="relative flex-shrink-0">
+                                <div
+                                    class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
+                                    정</div>
+                                <span
+                                    class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-white"></span>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between">
+                                    <p class="text-sm font-semibold text-slate-800 truncate">—</p>
+                                    <span class="text-[10px] text-slate-400">1시간 전</span>
+                                </div>
+                                <p class="text-xs text-slate-400 truncate">—</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chat Area -->
+                <div class="flex-1 flex flex-col">
+                    <!-- Chat Header -->
+                    <div class="flex items-center justify-between px-6 py-3 bg-white border-b border-slate-100">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-sm font-bold">
+                                김</div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-800">—</p>
+                                <div class="flex items-center gap-1"><span
+                                        class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span><span
+                                        class="text-[10px] text-emerald-600 font-medium">—</span></div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button class="header-icon-btn !w-9 !h-9" title="화면 보기"><span
+                                    class="material-symbols-outlined text-base">visibility</span></button>
+                            <button class="header-icon-btn !w-9 !h-9" title="프로세스"><span
+                                    class="material-symbols-outlined text-base">manufacturing</span></button>
+                            <button class="header-icon-btn !w-9 !h-9 !border-red-200 !text-red-400 hover:!bg-red-50"
+                                title="화면 잠금"><span class="material-symbols-outlined text-base">lock</span></button>
+                        </div>
+                    </div>
+
+                    <!-- Messages -->
+                    <div class="flex-1 overflow-y-auto p-6 space-y-4 sidebar-scroll bg-slate-50/50">
+                        <!-- Admin message -->
+                        <div class="flex justify-end">
+                            <div class="max-w-[70%]">
+                                <div
+                                    class="bg-primary text-white px-4 py-2.5 rounded-2xl rounded-br-sm text-sm shadow-sm">
+                                    —
+                                </div>
+                                <p class="text-[10px] text-slate-400 text-right mt-1">오전 10:30</p>
+                            </div>
+                        </div>
+                        <!-- Student message -->
+                        <div class="flex">
+                            <div class="max-w-[70%]">
+                                <div
+                                    class="bg-white px-4 py-2.5 rounded-2xl rounded-bl-sm text-sm shadow-sm border border-slate-100">
+
+                                </div>
+                                <p class="text-[10px] text-slate-400 mt-1">오전 10:32</p>
+                            </div>
+                        </div>
+                        <!-- Admin message -->
+                        <div class="flex justify-end">
+                            <div class="max-w-[70%]">
+                                <div
+                                    class="bg-primary text-white px-4 py-2.5 rounded-2xl rounded-br-sm text-sm shadow-sm">
+                                    —
+                                </div>
+                                <p class="text-[10px] text-slate-400 text-right mt-1">오전 10:33</p>
+                            </div>
+                        </div>
+                        <!-- Student message -->
+                        <div class="flex">
+                            <div class="max-w-[70%]">
+                                <div
+                                    class="bg-white px-4 py-2.5 rounded-2xl rounded-bl-sm text-sm shadow-sm border border-slate-100">
+                                    —
+                                </div>
+                                <p class="text-[10px] text-slate-400 mt-1">오전 10:34</p>
+                            </div>
+                        </div>
+                        <!-- AI Suggestion -->
+                        <div class="flex justify-center">
+                            <div
+                                class="inline-flex items-center gap-2 px-4 py-2 bg-violet-50 border border-violet-200 rounded-full">
+                                <span class="material-symbols-outlined text-violet-500 text-sm">auto_awesome</span>
+                                <span class="text-[11px] text-violet-600 font-medium">AI 제안: 연결된 PC가 없습니다</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Message Input -->
+                    <div class="px-6 py-4 bg-white border-t border-slate-100">
+                        <div class="flex items-end gap-3">
+                            <div class="flex-1 relative">
+                                <textarea rows="1" placeholder="메시지를 입력하세요..."
+                                    class="w-full px-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 placeholder:text-slate-300"
+                                    style="min-height:44px;max-height:120px"></textarea>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button class="header-icon-btn !w-10 !h-10" title="파일 첨부"><span
+                                        class="material-symbols-outlined text-base">attach_file</span></button>
+                                <button class="header-icon-btn !w-10 !h-10" title="URL 전송"><span
+                                        class="material-symbols-outlined text-base">link</span></button>
+                                <button
+                                    class="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center hover:bg-primary-dark transition shadow-sm">
+                                    <span class="material-symbols-outlined text-lg">send</span>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Quick Actions -->
+                        <div class="flex items-center gap-2 mt-3">
+                            <span class="text-[10px] text-slate-400 font-medium">빠른 액션:</span>
+                            <button
+                                class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-[10px] font-medium text-slate-500 rounded-lg hover:bg-slate-200 transition">
+                                <span class="material-symbols-outlined text-xs">lock</span>Lock Screen
+                            </button>
+                            <button
+                                class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-[10px] font-medium text-slate-500 rounded-lg hover:bg-slate-200 transition">
+                                <span class="material-symbols-outlined text-xs">warning</span>Send Warning
+                            </button>
+                            <button
+                                class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-[10px] font-medium text-slate-500 rounded-lg hover:bg-slate-200 transition">
+                                <span class="material-symbols-outlined text-xs">link</span>Push URL
+                            </button>
+                            <button
+                                class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-[10px] font-medium text-slate-500 rounded-lg hover:bg-slate-200 transition">
+                                <span class="material-symbols-outlined text-xs">screenshot_monitor</span>Screenshot
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Panel: Student Info -->
+                <div class="w-72 bg-white border-l border-slate-100 flex flex-col flex-shrink-0 hidden 2xl:flex">
+                    <div class="p-5 border-b border-slate-100 text-center">
+                        <div
+                            class="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-2xl font-bold mx-auto mb-3 shadow-md">
+                            김</div>
+                        <p class="text-sm font-bold text-slate-800">—</p>
+                        <p class="text-xs text-slate-400">—</p>
+                        <div class="flex justify-center mt-2"><span
+                                class="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-[10px] font-bold rounded-full">온라인</span>
+                        </div>
+                    </div>
+                    <div class="flex-1 overflow-y-auto p-5 space-y-5 sidebar-scroll">
+                        <!-- Screen Preview -->
+                        <div>
+                            <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">화면 프리뷰</h4>
+                            <div class="aspect-video bg-slate-900 rounded-lg flex items-center justify-center">
+                                <span class="material-symbols-outlined text-slate-700 text-3xl">desktop_windows</span>
+                            </div>
+                        </div>
+                        <!-- Process Monitor -->
+                        <div>
+                            <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">프로세스 모니터</h4>
+                            <div class="space-y-2">
+                                <div class="flex items-center justify-between text-xs">
+                                    <span class="text-slate-600 font-medium">—</span>
+                                    <span class="text-slate-400">—</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Resource -->
+                        <div>
+                            <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">리소스</h4>
+                            <div class="space-y-2">
+                                <div>
+                                    <div class="flex items-center justify-between text-[10px] mb-1"><span
+                                            class="text-slate-500">CPU</span><span
+                                            class="font-bold text-slate-600">—</span></div>
+                                    <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                        <div class="h-full bg-primary rounded-full" style="width:0%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex items-center justify-between text-[10px] mb-1"><span
+                                            class="text-slate-500">메모리</span><span
+                                            class="font-bold text-slate-600">—</span></div>
+                                    <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                        <div class="h-full bg-violet-500 rounded-full" style="width:0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+            (function () {
+                const socket = io({ transports: ['websocket', 'polling'] });
+                let allPCs = [];
+                let selectedPC = null;
+
+                // === Load PCs ===
+                async function loadPCs() {
+                    try {
+                        const res = await fetch('/api/pcs');
+                        const data = await res.json();
+                        allPCs = data.pcs || data || [];
+                        renderStudentList();
+                        if (!selectedPC && allPCs.length > 0) selectStudent(allPCs[0].pc_name || allPCs[0].name);
+                        if (selectedPC) updateRightPanel();
+                    } catch (e) { console.error('Load error:', e); }
+                }
+
+                // === Student List ===
+                function renderStudentList() {
+                    const list = document.querySelector('.flex-1.overflow-y-auto.sidebar-scroll');
+                    if (!list || !list.closest('.w-72.bg-white.border-r')) return;
+                    const searchVal = list.parentElement.querySelector('input')?.value?.toLowerCase() || '';
+                    const filtered = allPCs.filter(pc =>
+                        (pc.pc_name || pc.name || '').toLowerCase().includes(searchVal) ||
+                        (pc.ip_address || '').includes(searchVal)
+                    );
+                    const colors = ['from-blue-500 to-indigo-500', 'from-emerald-500 to-teal-500', 'from-amber-500 to-orange-500', 'from-violet-500 to-purple-500', 'from-rose-500 to-pink-500'];
+
+                    if (filtered.length === 0) {
+                        list.innerHTML = '<div class="flex flex-col items-center justify-center py-12 text-slate-300"><span class="material-symbols-outlined text-3xl mb-2">person_off</span><p class="text-xs text-slate-400">연결된 PC가 없습니다</p></div>';
+                        return;
+                    }
+
+                    list.innerHTML = filtered.map((pc, i) => {
+                        const name = pc.pc_name || pc.name;
+                        const isOn = pc.status === 'online';
+                        const isActive = name === selectedPC;
+                        const initial = name.charAt(0).toUpperCase();
+                        const color = colors[i % colors.length];
+                        return `
+                <div class="flex items-center gap-3 px-4 py-3 ${isActive ? 'bg-primary/5 border-l-2 border-primary' : 'hover:bg-slate-50 border-l-2 border-transparent'} cursor-pointer transition" onclick="window._selectStudent('${name}')">
+                    <div class="relative flex-shrink-0">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center text-white text-sm font-bold">${initial}</div>
+                        <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full ${isOn ? 'bg-emerald-400' : 'bg-slate-300'} border-2 border-white"></span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between">
+                            <p class="text-sm font-semibold text-slate-800 truncate">${name}</p>
+                            <span class="text-[10px] text-slate-400">${isOn ? '온라인' : '오프라인'}</span>
+                        </div>
+                        <p class="text-xs text-slate-400 truncate">${pc.ip_address || '—'}</p>
+                    </div>
+                </div>`;
+                    }).join('');
+                }
+
+                // === Select Student ===
+                window._selectStudent = function (name) {
+                    selectedPC = name;
+                    renderStudentList();
+                    updateChatHeader();
+                    updateRightPanel();
+                    loadChatHistory();
+                };
+
+                function selectStudent(name) { window._selectStudent(name); }
+
+                // === Chat Header ===
+                function updateChatHeader() {
+                    const pc = allPCs.find(p => (p.pc_name || p.name) === selectedPC);
+                    if (!pc) return;
+                    const name = pc.pc_name || pc.name;
+                    const isOn = pc.status === 'online';
+
+                    const chatHeader = document.querySelector('.flex.items-center.justify-between.px-6.py-3');
+                    if (!chatHeader) return;
+                    const avatar = chatHeader.querySelector('.w-10.h-10');
+                    if (avatar) avatar.textContent = name.charAt(0).toUpperCase();
+                    const nameEl = chatHeader.querySelector('.text-sm.font-bold');
+                    if (nameEl) nameEl.textContent = name;
+                    const statusEl = chatHeader.querySelector('.text-\\[10px\\]');
+                    if (statusEl) statusEl.textContent = isOn ? '온라인' : '오프라인';
+                    const dot = chatHeader.querySelector('.w-1\\.5.h-1\\.5');
+                    if (dot) dot.className = `w-1.5 h-1.5 rounded-full ${isOn ? 'bg-emerald-400' : 'bg-slate-300'}`;
+                }
+
+                // === Chat History ===
+                async function loadChatHistory() {
+                    try {
+                        const res = await fetch(`/api/logs?limit=20&pc_name=${encodeURIComponent(selectedPC)}`);
+                        const data = await res.json();
+                        const logs = data.logs || data || [];
+                        renderChat(logs);
+                    } catch (e) { console.error('Chat load error:', e); }
+                }
+
+                function renderChat(logs) {
+                    const chatArea = document.querySelector('.flex-1.overflow-y-auto.p-6.space-y-4');
+                    if (!chatArea) return;
+                    if (logs.length === 0) {
+                        chatArea.innerHTML = `
+                    <div class="flex justify-center">
+                        <div class="inline-flex items-center gap-2 px-4 py-2 bg-violet-50 border border-violet-200 rounded-full">
+                            <span class="material-symbols-outlined text-violet-500 text-sm">auto_awesome</span>
+                            <span class="text-[11px] text-violet-600 font-medium">메시지 기록이 없습니다</span>
+                        </div>
+                    </div>`;
+                        return;
+                    }
+                    chatArea.innerHTML = logs.map(log => {
+                        const isAdmin = log.type === 'command' || log.type === 'remote-command';
+                        const time = new Date(log.timestamp || log.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+                        const content = log.details || log.action || log.type;
+                        return isAdmin ? `
+                    <div class="flex justify-end">
+                        <div class="max-w-[70%]">
+                            <div class="bg-primary text-white px-4 py-2.5 rounded-2xl rounded-br-sm text-sm shadow-sm">${content}</div>
+                            <p class="text-[10px] text-slate-400 text-right mt-1">${time}</p>
+                        </div>
+                    </div>` : `
+                    <div class="flex">
+                        <div class="max-w-[70%]">
+                            <div class="bg-white px-4 py-2.5 rounded-2xl rounded-bl-sm text-sm shadow-sm border border-slate-100">${content}</div>
+                            <p class="text-[10px] text-slate-400 mt-1">${time}</p>
+                        </div>
+                    </div>`;
+                    }).join('');
+                    chatArea.scrollTop = chatArea.scrollHeight;
+                }
+
+                // === Send Message ===
+                const sendBtn = document.querySelector('.bg-primary.text-white.rounded-xl.w-10.h-10, button[class*="bg-primary"][class*="rounded-xl"]');
+                const textarea = document.querySelector('textarea');
+
+                async function sendMessage() {
+                    if (!selectedPC || !textarea?.value.trim()) return;
+                    const msg = textarea.value.trim();
+                    try {
+                        await fetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ command: 'message', message: msg })
+                        });
+                        // Add to chat immediately
+                        const chatArea = document.querySelector('.flex-1.overflow-y-auto.p-6.space-y-4');
+                        if (chatArea) {
+                            const time = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+                            chatArea.innerHTML += `<div class="flex justify-end"><div class="max-w-[70%]"><div class="bg-primary text-white px-4 py-2.5 rounded-2xl rounded-br-sm text-sm shadow-sm">📩 ${msg}</div><p class="text-[10px] text-slate-400 text-right mt-1">${time}</p></div></div>`;
+                            chatArea.scrollTop = chatArea.scrollHeight;
+                        }
+                        textarea.value = '';
+                        showToast('메시지 전송 완료');
+                    } catch (e) { showToast('전송 실패', true); }
+                }
+
+                document.querySelectorAll('button').forEach(btn => {
+                    if (btn.classList.contains('bg-primary') && btn.querySelector('.material-symbols-outlined')?.textContent === 'send') {
+                        btn.addEventListener('click', sendMessage);
+                    }
+                });
+                if (textarea) textarea.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
+
+                // === Right Panel ===
+                function updateRightPanel() {
+                    const pc = allPCs.find(p => (p.pc_name || p.name) === selectedPC);
+                    if (!pc) return;
+                    const name = pc.pc_name || pc.name;
+
+                    // Right panel avatar & info
+                    const rightPanel = document.querySelector('.w-72.bg-white.border-l');
+                    if (!rightPanel) return;
+
+                    const rpAvatar = rightPanel.querySelector('.w-16.h-16');
+                    if (rpAvatar) rpAvatar.textContent = name.charAt(0).toUpperCase();
+                    const rpName = rightPanel.querySelector('.text-sm.font-bold.text-slate-800');
+                    if (rpName) rpName.textContent = name;
+                    const rpSub = rightPanel.querySelector('.text-xs.text-slate-400');
+                    if (rpSub) rpSub.textContent = pc.ip_address || '—';
+                    const rpStatus = rightPanel.querySelector('.px-2.py-0\\.5');
+                    if (rpStatus) { rpStatus.textContent = pc.status === 'online' ? '온라인' : '오프라인'; rpStatus.className = `px-2 py-0.5 ${pc.status === 'online' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-400'} text-[10px] font-bold rounded-full`; }
+
+                    // CPU & Memory bars
+                    const cpuVal = rightPanel.querySelectorAll('.font-bold.text-slate-600');
+                    if (cpuVal[0]) cpuVal[0].textContent = pc.cpu_usage != null ? `${Math.round(pc.cpu_usage)}%` : '—';
+                    if (cpuVal[1]) cpuVal[1].textContent = pc.memory_usage != null ? `${Math.round(pc.memory_usage)}%` : '—';
+                    const bars = rightPanel.querySelectorAll('.h-full');
+                    if (bars[0]) bars[0].style.width = pc.cpu_usage != null ? `${pc.cpu_usage}%` : '0%';
+                    if (bars[1]) bars[1].style.width = pc.memory_usage != null ? `${pc.memory_usage}%` : '0%';
+                }
+
+                // === Quick Actions ===
+                document.querySelectorAll('.inline-flex.items-center.gap-1.px-2\\.5.py-1').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (!selectedPC) return showToast('PC를 먼저 선택하세요', true);
+                        const text = btn.textContent.trim();
+                        let cmd = 'message';
+                        if (text.includes('Lock')) cmd = 'lock';
+                        else if (text.includes('Warning')) { cmd = 'message'; }
+                        else if (text.includes('Screenshot')) cmd = 'screenshot';
+                        else if (text.includes('URL')) {
+                            const url = prompt('전송할 URL:');
+                            if (!url) return;
+                            await fetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: 'open-url', url }) });
+                            showToast('URL 전송 완료'); return;
+                        }
+                        if (cmd === 'message' && text.includes('Warning')) {
+                            await fetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: 'message', message: '⚠️ 경고: 수업에 집중해 주세요.' }) });
+                        } else {
+                            await fetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: cmd }) });
+                        }
+                        showToast(`${cmd} 전송 완료`);
+                    });
+                });
+
+                // === Search ===
+                const searchInput = document.querySelector('input[placeholder="학생 검색..."]');
+                if (searchInput) searchInput.addEventListener('input', renderStudentList);
+
+                // === Refresh ===
+                document.querySelectorAll('button').forEach(btn => {
+                    if (btn.querySelector('.material-symbols-outlined')?.textContent === 'refresh') {
+                        btn.addEventListener('click', loadPCs);
+                    }
+                });
+
+                // === WebSocket ===
+                socket.on('pc-updated', (data) => {
+                    const name = data.pc_name || data.name;
+                    const idx = allPCs.findIndex(p => (p.pc_name || p.name) === name);
+                    if (idx >= 0) { allPCs[idx] = { ...allPCs[idx], ...data }; renderStudentList(); if (name === selectedPC) updateRightPanel(); }
+                    else { allPCs.push(data); renderStudentList(); }
+                });
+                socket.on('pc-registered', (data) => { allPCs.push(data); renderStudentList(); });
+
+                // === Toast ===
+                function showToast(msg, isError = false) {
+                    const t = document.createElement('div');
+                    t.className = `fixed bottom-5 right-5 px-4 py-3 rounded-xl shadow-lg text-sm font-medium z-50 ${isError ? 'bg-red-500 text-white' : 'bg-white text-slate-800 border border-slate-200'}`;
+                    t.textContent = msg; document.body.appendChild(t);
+                    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
+                }
+
+                loadPCs();
+                setInterval(loadPCs, 15000);
+            })();
+    </script>
+</body>
+
+</html>

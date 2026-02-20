@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "C:\\Users\\louis\\.gemini\\antigravity\\scratch\\PC-Management\\dashboard\\backend\\logs\\.3b51ac8e9ecb47afa1f94397276d6c6935358b84-audit.json",
+    "files": [
+        {
+            "date": 1771553138363,
+            "name": "C:\\Users\\louis\\.gemini\\antigravity\\scratch\\PC-Management\\dashboard\\backend\\logs\\combined-2026-02-20.log",
+            "hash": "10b218faced6e3f4db89793a72be1a3508c1717514d0d793cf6e47df63f9f9b6"
+        }
+    ],
+    "hashType": "sha256"
+}

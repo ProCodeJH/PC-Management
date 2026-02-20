@@ -4,791 +4,704 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Enterprise PC Management Dashboard</title>
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>Academy PC Admin — Main Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2563eb",
+                        "primary-dark": "#1e40af",
+                        "primary-light": "#dbeafe",
+                        "secondary": "#64748b",
+                        "bg-base": "#f1f5f9",
+                        "surface": "#ffffff",
+                        "border-c": "#e2e8f0",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1rem" },
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css">
 </head>
 
-<body>
-    <!-- Animated Background -->
-    <div class="bg-grid"></div>
-    <div class="bg-glow"></div>
+<body class="bg-bg-base font-display text-slate-800 antialiased overflow-hidden">
+    <div class="flex h-screen w-full overflow-hidden">
 
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <div class="logo">
-                <div class="logo-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="3" width="20" height="14" rx="2"></rect>
-                        <path d="M8 21h8M12 17v4"></path>
-                    </svg>
+        <!-- ===== Sidebar ===== -->
+        <aside class="hidden md:flex flex-col w-64 bg-white border-r border-border-c flex-shrink-0 shadow-sm z-10">
+            <!-- Logo -->
+            <div class="flex items-center gap-3 px-5 py-5 border-b border-slate-100">
+                <div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white text-xl"
+                        style="font-variation-settings:'FILL' 1">dashboard</span>
                 </div>
-                <span class="logo-text">Enterprise<br>PC Manager</span>
+                <div>
+                    <p class="text-sm font-bold text-slate-800 leading-tight">Enterprise</p>
+                    <p class="text-xs text-slate-400 leading-tight">PC Manager</p>
+                </div>
             </div>
-        </div>
 
-        <nav class="sidebar-nav">
-            <a href="#" class="nav-item active" data-view="dashboard">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                </svg>
-                <span>대시보드</span>
-            </a>
-            <a href="#" class="nav-item" data-view="pcs">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="2" y="3" width="20" height="14" rx="2"></rect>
-                    <path d="M8 21h8M12 17v4"></path>
-                </svg>
-                <span>PC 관리</span>
-            </a>
-            <a href="#" class="nav-item" data-view="logs">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"></path>
-                </svg>
-                <span>활동 로그</span>
-            </a>
-            <a href="#" class="nav-item" data-view="blocking" id="navBlocking">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-                </svg>
-                <span>차단 관리</span>
-            </a>
-            <a href="#" class="nav-item" data-view="analytics">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M18 20V10M12 20V4M6 20v-6"></path>
-                </svg>
-                <span>분석</span>
-            </a>
-            <a href="#" class="nav-item" data-view="settings">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path
-                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
-                    </path>
-                </svg>
-                <span>설정</span>
-            </a>
-        </nav>
+            <!-- Navigation -->
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto sidebar-scroll">
+                <p class="px-3 pb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Overview</p>
+                <a href="index.html" class="nav-link active">
+                    <span class="material-symbols-outlined text-[20px]">space_dashboard</span>
+                    <span>대시보드</span>
+                </a>
+                <a href="classroom.html" class="nav-link">
+                    <span class="material-symbols-outlined text-[20px]">grid_view</span>
+                    <span>교실 모니터링</span>
+                </a>
+                <a href="student.html" class="nav-link">
+                    <span class="material-symbols-outlined text-[20px]">person_search</span>
+                    <span>학생 활동 로그</span>
+                </a>
 
-        <div class="sidebar-live-stats" id="sidebarLiveStats">
-            <div class="live-stat-row">
-                <span class="live-stat-label">온라인</span>
-                <span class="live-stat-value online-count" id="sidebarOnlineCount">0대</span>
-            </div>
-            <div class="live-stat-row">
-                <span class="live-stat-label">전체 PC</span>
-                <span class="live-stat-value" id="sidebarTotalCount">0대</span>
-            </div>
-            <div class="live-stat-row">
-                <span class="live-stat-label">서버 가동</span>
-                <span class="live-stat-value" id="sidebarUptime">0분</span>
-            </div>
-        </div>
+                <p class="px-3 pt-5 pb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Management
+                </p>
+                <a href="communication.html" class="nav-link">
+                    <span class="material-symbols-outlined text-[20px]">forum</span>
+                    <span>커뮤니케이션</span>
+                </a>
+                <a href="deployment.html" class="nav-link">
+                    <span class="material-symbols-outlined text-[20px]">deployed_code</span>
+                    <span>배포 & 설정</span>
+                </a>
+                <a href="analytics.html" class="nav-link">
+                    <span class="material-symbols-outlined text-[20px]">monitoring</span>
+                    <span>AI 분석</span>
+                </a>
 
-        <div class="sidebar-footer">
-            <div class="system-status">
-                <div class="status-dot online"></div>
-                <span>시스템 정상</span>
-            </div>
-            <div class="version">v4.0.0</div>
-        </div>
-    </aside>
+                <p class="px-3 pt-5 pb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">System</p>
+                <a href="#" class="nav-link">
+                    <span class="material-symbols-outlined text-[20px]">settings</span>
+                    <span>설정</span>
+                </a>
+            </nav>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Header -->
-        <header class="header">
-            <div class="header-left">
-                <h1 class="page-title">대시보드</h1>
-                <span class="page-subtitle">실시간 PC 모니터링</span>
-            </div>
-            <div class="header-right">
-                <div class="search-box">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="M21 21l-4.35-4.35"></path>
-                    </svg>
-                    <input type="text" placeholder="PC 검색..." id="searchInput">
+            <!-- Sidebar Footer -->
+            <div class="px-5 py-4 border-t border-slate-100">
+                <div class="flex items-center gap-2 text-xs text-slate-400">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>시스템 정상</span>
                 </div>
-                <button class="btn-icon" id="refreshBtn" title="새로고침">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M23 4v6h-6M1 20v-6h6"></path>
-                        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                    </svg>
-                </button>
-                <button class="btn-icon" id="notifBtn" title="알림">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
-                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
-                    </svg>
-                    <span class="notif-badge">3</span>
-                </button>
-                <button class="btn-icon" id="themeToggle" title="테마 전환">
-                    <svg class="theme-icon-dark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="5"></circle>
-                        <line x1="12" y1="1" x2="12" y2="3"></line>
-                        <line x1="12" y1="21" x2="12" y2="23"></line>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                        <line x1="1" y1="12" x2="3" y2="12"></line>
-                        <line x1="21" y1="12" x2="23" y2="12"></line>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                    </svg>
-                    <svg class="theme-icon-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        style="display:none">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                    </svg>
-                </button>
-                <div class="user-menu">
-                    <div class="user-avatar">A</div>
-                    <span>관리자</span>
-                </div>
+                <p class="text-[10px] text-slate-300 mt-1">v4.0.0 — Enterprise Edition</p>
             </div>
-        </header>
+        </aside>
 
-        <!-- Stats Cards -->
-        <section class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon blue">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="2" y="3" width="20" height="14" rx="2"></rect>
-                        <path d="M8 21h8M12 17v4"></path>
-                    </svg>
+        <!-- ===== Main Content ===== -->
+        <div class="flex-1 flex flex-col h-full overflow-hidden relative bg-slate-50/50">
+            <!-- Header -->
+            <header
+                class="flex items-center justify-between px-6 h-16 bg-white/80 backdrop-blur border-b border-border-c flex-shrink-0">
+                <div>
+                    <h1 class="text-lg font-bold text-slate-800">대시보드</h1>
+                    <p class="text-xs text-slate-400 -mt-0.5">실시간 PC 모니터링 & 관리</p>
                 </div>
-                <div class="stat-info">
-                    <span class="stat-label">전체 PC</span>
-                    <span class="stat-value" id="totalPCs">0</span>
-                </div>
-                <div class="stat-trend up">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M23 6l-9.5 9.5-5-5L1 18"></path>
-                    </svg>
-                    <span>12%</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon green">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                        <path d="M22 4L12 14.01l-3-3"></path>
-                    </svg>
-                </div>
-                <div class="stat-info">
-                    <span class="stat-label">온라인</span>
-                    <span class="stat-value" id="onlinePCs">0</span>
-                </div>
-                <div class="stat-trend up">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M23 6l-9.5 9.5-5-5L1 18"></path>
-                    </svg>
-                    <span>8%</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon orange">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <path d="M12 6v6l4 2"></path>
-                    </svg>
-                </div>
-                <div class="stat-info">
-                    <span class="stat-label">오늘 활동</span>
-                    <span class="stat-value" id="todayActivities">0</span>
-                </div>
-                <div class="stat-trend down">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M23 18l-9.5-9.5-5 5L1 6"></path>
-                    </svg>
-                    <span>3%</span>
-                </div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon blue">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-                    </svg>
-                </div>
-                <div class="stat-info">
-                    <span class="stat-label">보안 상태</span>
-                    <span class="stat-value status-good">정상</span>
-                </div>
-                <div class="stat-badge">100%</div>
-            </div>
-        </section>
-
-        <!-- Bulk Control Toolbar -->
-        <div class="bulk-toolbar" id="bulkToolbar">
-            <div class="bulk-toolbar-left">
-                <span class="bulk-label">⚡ 전체 PC 제어</span>
-                <span class="bulk-count" id="bulkCount">0대 온라인</span>
-            </div>
-            <div class="bulk-toolbar-right">
-                <button class="bulk-btn lock" onclick="dashboard.sendBulkCommand('lock')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                    전체 잠금
-                </button>
-                <button class="bulk-btn message" onclick="dashboard.openBulkMessageModal()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    </svg>
-                    전체 메시지
-                </button>
-                <button class="bulk-btn screenshot" onclick="dashboard.requestAllScreenshots()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                        <path d="M21 15l-5-5L5 21"></path>
-                    </svg>
-                    전체 스크린샷
-                </button>
-                <button class="bulk-btn shutdown" onclick="dashboard.sendBulkCommand('shutdown')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                        <path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"></path>
-                    </svg>
-                    전체 종료
-                </button>
-            </div>
-        </div>
-
-        <!-- Main Grid -->
-        <div class="content-grid">
-            <!-- PC Grid -->
-            <section class="card pc-grid-section">
-                <div class="card-header">
-                    <h2>PC 현황</h2>
-                    <div class="card-actions">
-                        <button class="btn-primary" id="addPcBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="12" y1="5" x2="12" y2="19"></line>
-                                <line x1="5" y1="12" x2="19" y2="12"></line>
-                            </svg>
-                            PC 추가
-                        </button>
-                        <button class="btn-primary" id="oneClickSetupBtn"
-                            style="background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
-                            </svg>
-                            ⚡ 원클릭 전체 설정
-                        </button>
-                        <button class="btn-sm" id="viewGridBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="3" width="7" height="7"></rect>
-                                <rect x="14" y="3" width="7" height="7"></rect>
-                                <rect x="14" y="14" width="7" height="7"></rect>
-                                <rect x="3" y="14" width="7" height="7"></rect>
-                            </svg>
-                        </button>
-                        <button class="btn-sm" id="viewListBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <line x1="8" y1="6" x2="21" y2="6"></line>
-                                <line x1="8" y1="12" x2="21" y2="12"></line>
-                                <line x1="8" y1="18" x2="21" y2="18"></line>
-                                <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                                <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                                <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                            </svg>
-                        </button>
+                <div class="flex items-center gap-3">
+                    <!-- Search -->
+                    <div class="relative hidden lg:block">
+                        <span
+                            class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+                        <input id="searchInput" type="text" placeholder="PC 검색... (Ctrl+K)"
+                            class="w-56 h-9 pl-10 pr-4 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition placeholder:text-slate-300">
+                    </div>
+                    <!-- Refresh -->
+                    <button id="refreshBtn" class="header-icon-btn" title="새로고침">
+                        <span class="material-symbols-outlined text-lg">refresh</span>
+                    </button>
+                    <!-- Notifications -->
+                    <button id="notifBtn" class="header-icon-btn relative" title="알림">
+                        <span class="material-symbols-outlined text-lg">notifications</span>
+                        <span id="notifBadge"
+                            class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-bold rounded-full items-center justify-center hidden">0</span>
+                    </button>
+                    <!-- Theme Toggle -->
+                    <button id="themeToggle" class="header-icon-btn" title="테마 전환">
+                        <span class="material-symbols-outlined text-lg">dark_mode</span>
+                    </button>
+                    <!-- User -->
+                    <div class="flex items-center gap-2 pl-3 border-l border-slate-200">
+                        <div
+                            class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
+                            A</div>
+                        <span class="text-sm font-medium text-slate-600 hidden xl:block">관리자</span>
                     </div>
                 </div>
-                <div class="pc-grid" id="pcGrid">
-                    <!-- PC cards will be inserted here -->
-                    <div class="pc-empty-state">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <rect x="2" y="3" width="20" height="14" rx="2"></rect>
-                            <path d="M8 21h8M12 17v4"></path>
-                        </svg>
-                        <p>연결된 PC가 없습니다</p>
-                        <span>PC 에이전트를 실행하면 자동으로 연결됩니다</span>
-                    </div>
-                </div>
-            </section>
+            </header>
 
-            <!-- Charts Section -->
-            <section class="card chart-section">
-                <div class="card-header">
-                    <h2>시스템 사용률</h2>
-                    <select class="chart-period">
-                        <option value="today">오늘</option>
-                        <option value="week">이번 주</option>
-                        <option value="month">이번 달</option>
-                    </select>
-                </div>
-                <div class="chart-container">
-                    <canvas id="usageChart"></canvas>
-                </div>
-            </section>
+            <!-- Scrollable Content -->
+            <main class="flex-1 overflow-y-auto p-6 space-y-6" id="mainContent">
 
-            <!-- Activity Log -->
-            <section class="card activity-section">
-                <div class="card-header">
-                    <h2>최근 활동</h2>
-                    <button class="btn-link">전체 보기</button>
-                </div>
-                <div class="activity-list" id="activityList">
-                    <!-- Activity items will be inserted here -->
-                    <div class="activity-empty">
-                        <p>최근 활동이 없습니다</p>
+                <!-- ===== Stats Cards ===== -->
+                <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="stat-card group">
+                        <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-primary text-2xl"
+                                style="font-variation-settings:'FILL' 1">computer</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-medium text-slate-400">전체 PC</p>
+                            <p class="text-2xl font-bold text-slate-800" id="totalPCs">0</p>
+                        </div>
                     </div>
-                </div>
-            </section>
+                    <div class="stat-card group">
+                        <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-emerald-500 text-2xl"
+                                style="font-variation-settings:'FILL' 1">check_circle</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-medium text-slate-400">온라인</p>
+                            <p class="text-2xl font-bold text-emerald-600" id="onlinePCs">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card group">
+                        <div class="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-amber-500 text-2xl"
+                                style="font-variation-settings:'FILL' 1">schedule</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-medium text-slate-400">오늘 활동</p>
+                            <p class="text-2xl font-bold text-slate-800" id="todayActivities">0</p>
+                        </div>
+                    </div>
+                    <div class="stat-card group">
+                        <div class="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-violet-500 text-2xl"
+                                style="font-variation-settings:'FILL' 1">verified_user</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-xs font-medium text-slate-400">보안 상태</p>
+                            <p class="text-2xl font-bold text-slate-500" id="securityStatus">—</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ===== Bulk Control Toolbar ===== -->
+                <section
+                    class="flex items-center justify-between bg-white rounded-xl border border-slate-200 px-5 py-3 shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-primary">bolt</span>
+                        <span class="text-sm font-semibold text-slate-700">전체 PC 제어</span>
+                        <span class="text-xs text-slate-400" id="bulkCount">0대 온라인</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="dashboard.sendBulkCommand('lock')" class="bulk-action-btn">
+                            <span class="material-symbols-outlined text-base">lock</span>
+                            <span class="hidden sm:inline">전체 잠금</span>
+                        </button>
+                        <button onclick="dashboard.openBulkMessageModal()" class="bulk-action-btn">
+                            <span class="material-symbols-outlined text-base">chat</span>
+                            <span class="hidden sm:inline">전체 메시지</span>
+                        </button>
+                        <button onclick="dashboard.requestAllScreenshots()" class="bulk-action-btn">
+                            <span class="material-symbols-outlined text-base">screenshot_monitor</span>
+                            <span class="hidden sm:inline">전체 스크린샷</span>
+                        </button>
+                        <button onclick="dashboard.sendBulkCommand('shutdown')"
+                            class="bulk-action-btn text-red-500 hover:bg-red-50 hover:border-red-200">
+                            <span class="material-symbols-outlined text-base">power_settings_new</span>
+                            <span class="hidden sm:inline">전체 종료</span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- ===== Content Grid: PC Grid + Right Sidebar ===== -->
+                <section class="grid grid-cols-1 xl:grid-cols-[1fr_360px] gap-5">
+
+                    <!-- PC Grid Card -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary text-lg">dns</span>
+                                <h2 class="text-sm font-bold text-slate-800">PC 현황</h2>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button id="addPcBtn"
+                                    class="inline-flex items-center gap-1.5 h-8 px-3 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary-dark transition">
+                                    <span class="material-symbols-outlined text-base">add</span>
+                                    PC 추가
+                                </button>
+                                <button id="oneClickSetupBtn"
+                                    class="inline-flex items-center gap-1.5 h-8 px-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-xs font-semibold rounded-lg hover:brightness-110 transition">
+                                    <span class="material-symbols-outlined text-base">bolt</span>
+                                    원클릭 설정
+                                </button>
+                                <button id="viewGridBtn" class="header-icon-btn !w-8 !h-8"><span
+                                        class="material-symbols-outlined text-base">grid_view</span></button>
+                                <button id="viewListBtn" class="header-icon-btn !w-8 !h-8"><span
+                                        class="material-symbols-outlined text-base">view_list</span></button>
+                            </div>
+                        </div>
+                        <div class="p-4 min-h-[300px]" id="pcGrid">
+                            <!-- PC Cards rendered by JS -->
+                            <div class="flex flex-col items-center justify-center py-16 text-slate-300">
+                                <span class="material-symbols-outlined text-5xl mb-3">desktop_windows</span>
+                                <p class="text-sm font-medium text-slate-400">연결된 PC가 없습니다</p>
+                                <p class="text-xs text-slate-300 mt-1">에이전트를 실행하면 자동으로 연결됩니다</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column -->
+                    <div class="space-y-5">
+                        <!-- Chart Card -->
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-amber-500 text-lg">bar_chart</span>
+                                    <h2 class="text-sm font-bold text-slate-800">시스템 사용률</h2>
+                                </div>
+                                <select
+                                    class="text-xs border border-slate-200 rounded-lg px-2 py-1 text-slate-500 focus:outline-none">
+                                    <option>오늘</option>
+                                    <option>이번 주</option>
+                                    <option>이번 달</option>
+                                </select>
+                            </div>
+                            <div class="p-4 h-[200px]">
+                                <canvas id="usageChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Activity Log Card -->
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-violet-500 text-lg">history</span>
+                                    <h2 class="text-sm font-bold text-slate-800">최근 활동</h2>
+                                </div>
+                                <button class="text-xs text-primary font-medium hover:underline">전체 보기</button>
+                            </div>
+                            <div class="divide-y divide-slate-50 max-h-[280px] overflow-y-auto sidebar-scroll"
+                                id="activityList">
+                                <div class="flex flex-col items-center justify-center py-10 text-slate-300">
+                                    <span class="material-symbols-outlined text-3xl mb-2">event_note</span>
+                                    <p class="text-xs text-slate-400">최근 활동이 없습니다</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+            </main>
         </div>
-    </main>
+    </div>
 
-    <!-- PC Detail Modal -->
+    <!-- ===== PC Detail Modal ===== -->
     <div class="modal-overlay" id="pcModalOverlay">
-        <div class="modal" id="pcModal">
-            <div class="modal-header">
-                <h3 id="modalPcName">PC-01</h3>
-                <button class="modal-close" id="modalClose">&times;</button>
+        <div class="modal-panel max-w-lg">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                <h3 class="text-base font-bold text-slate-800" id="modalPcName">—</h3>
+                <button id="modalClose" class="modal-close-btn"><span
+                        class="material-symbols-outlined">close</span></button>
             </div>
-            <div class="modal-body">
-                <div class="modal-section">
-                    <h4>시스템 정보</h4>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="info-label">IP 주소</span>
-                            <span class="info-value" id="modalIp">-</span>
+            <div class="p-6 space-y-5 max-h-[70vh] overflow-y-auto sidebar-scroll">
+                <!-- System Info -->
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">시스템 정보</h4>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="bg-slate-50 rounded-lg p-3">
+                            <p class="text-[10px] text-slate-400">IP 주소</p>
+                            <p class="text-sm font-semibold text-slate-700" id="modalIp">-</p>
                         </div>
-                        <div class="info-item">
-                            <span class="info-label">상태</span>
-                            <span class="info-value" id="modalStatus">-</span>
+                        <div class="bg-slate-50 rounded-lg p-3">
+                            <p class="text-[10px] text-slate-400">상태</p>
+                            <p class="text-sm font-semibold text-slate-700" id="modalStatus">-</p>
                         </div>
-                        <div class="info-item">
-                            <span class="info-label">마지막 접속</span>
-                            <span class="info-value" id="modalLastSeen">-</span>
+                        <div class="bg-slate-50 rounded-lg p-3">
+                            <p class="text-[10px] text-slate-400">마지막 접속</p>
+                            <p class="text-sm font-semibold text-slate-700" id="modalLastSeen">-</p>
                         </div>
                     </div>
                 </div>
-                <div class="modal-section">
-                    <h4>리소스 사용률</h4>
-                    <div class="resource-bars">
-                        <div class="resource-item">
-                            <span>CPU</span>
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="modalCpu" style="width: 0%"></div>
+                <!-- Resource Usage -->
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">리소스 사용률</h4>
+                    <div class="space-y-3">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-medium text-slate-500 w-12">CPU</span>
+                            <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-primary rounded-full transition-all duration-500" id="modalCpu"
+                                    style="width:0%"></div>
                             </div>
-                            <span id="modalCpuValue">0%</span>
+                            <span class="text-xs font-bold text-slate-600 w-10 text-right" id="modalCpuValue">0%</span>
                         </div>
-                        <div class="resource-item">
-                            <span>메모리</span>
-                            <div class="progress-bar">
-                                <div class="progress-fill memory" id="modalMemory" style="width: 0%"></div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-medium text-slate-500 w-12">메모리</span>
+                            <div class="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                <div class="h-full bg-violet-500 rounded-full transition-all duration-500"
+                                    id="modalMemory" style="width:0%"></div>
                             </div>
-                            <span id="modalMemoryValue">0%</span>
+                            <span class="text-xs font-bold text-slate-600 w-10 text-right"
+                                id="modalMemoryValue">0%</span>
                         </div>
                     </div>
                 </div>
-                <div class="modal-section">
-                    <h4>원격 제어</h4>
-                    <div class="control-buttons">
-                        <button class="btn-control lock" data-command="lock">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                            </svg>
-                            화면 잠금
-                        </button>
-                        <button class="btn-control restart" data-command="restart">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M23 4v6h-6M1 20v-6h6"></path>
-                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                            </svg>
-                            재시작
-                        </button>
-                        <button class="btn-control screenshot" onclick="dashboard.requestScreenshot()">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                <path d="M21 15l-5-5L5 21"></path>
-                            </svg>
-                            스크린샷
-                        </button>
-                        <button class="btn-control liveview" onclick="dashboard.startLiveView()">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <circle cx="12" cy="12" r="3"></circle>
-                                <line x1="12" y1="2" x2="12" y2="5"></line>
-                                <line x1="12" y1="19" x2="12" y2="22"></line>
-                                <line x1="2" y1="12" x2="5" y2="12"></line>
-                                <line x1="19" y1="12" x2="22" y2="12"></line>
-                            </svg>
-                            실시간 보기
-                        </button>
-                        <button class="btn-control shutdown" data-command="shutdown">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10"></path>
-                            </svg>
-                            종료
+                <!-- Remote Controls -->
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">원격 제어</h4>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button data-command="lock" class="control-chip"><span
+                                class="material-symbols-outlined text-base">lock</span>잠금</button>
+                        <button data-command="restart" class="control-chip"><span
+                                class="material-symbols-outlined text-base">restart_alt</span>재시작</button>
+                        <button onclick="dashboard.requestScreenshot()" class="control-chip"><span
+                                class="material-symbols-outlined text-base">screenshot_monitor</span>스크린샷</button>
+                        <button onclick="dashboard.startLiveView()" class="control-chip"><span
+                                class="material-symbols-outlined text-base">visibility</span>실시간</button>
+                        <button data-command="shutdown" class="control-chip text-red-500"><span
+                                class="material-symbols-outlined text-base">power_settings_new</span>종료</button>
+                    </div>
+                </div>
+                <!-- Message -->
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">메시지 전송</h4>
+                    <div class="flex gap-2">
+                        <input id="modalMessageInput" type="text" placeholder="학생에게 전송할 메시지..."
+                            class="flex-1 h-9 px-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30">
+                        <button onclick="dashboard.sendMessageToPC()"
+                            class="h-9 px-4 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary-dark transition">
+                            <span class="material-symbols-outlined text-base">send</span>
                         </button>
                     </div>
                 </div>
-                <div class="modal-section">
-                    <h4>💬 메시지 전송</h4>
-                    <div class="message-input-group">
-                        <input type="text" id="modalMessageInput" placeholder="학생에게 전송할 메시지...">
-                        <button class="btn-primary" onclick="dashboard.sendMessageToPC()">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
-                                height="16">
-                                <line x1="22" y1="2" x2="11" y2="13"></line>
-                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-                            </svg>
-                            전송
-                        </button>
+                <!-- Process List -->
+                <div>
+                    <div class="flex items-center justify-between mb-3">
+                        <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">실행 중인 프로세스</h4>
+                        <button id="loadProcessesBtn" class="text-xs text-primary font-medium hover:underline">프로세스
+                            조회</button>
                     </div>
+                    <div id="processList" class="text-xs text-center text-slate-400 py-4">프로세스 조회 버튼을 클릭하세요</div>
                 </div>
-                <!-- 실행 중인 프로세스 목록 -->
-                <div class="modal-section">
-                    <h4>📋 실행 중인 프로세스</h4>
-                    <div class="process-controls">
-                        <button class="btn-sm" id="loadProcessesBtn">프로세스 조회</button>
+                <!-- Block Program -->
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">프로그램 잠금</h4>
+                    <div class="flex gap-2 mb-2">
+                        <input id="blockProgramInput" type="text" placeholder="예: discord.exe"
+                            class="flex-1 h-9 px-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30">
+                        <button id="blockProgramBtn"
+                            class="h-9 px-4 bg-red-500 text-white text-xs font-semibold rounded-lg hover:bg-red-600 transition">잠금</button>
                     </div>
-                    <div class="process-list" id="processList">
-                        <p class="process-empty">프로세스 조회 버튼을 클릭하세요</p>
-                    </div>
+                    <div id="blockedList" class="text-xs text-center text-slate-400 py-2">차단된 프로그램이 없습니다</div>
                 </div>
-                <!-- 프로그램 잠금 -->
-                <div class="modal-section">
-                    <h4>🔒 프로그램 잠금</h4>
-                    <div class="form-group">
-                        <div class="input-with-btn">
-                            <input type="text" id="blockProgramInput" placeholder="예: discord.exe">
-                            <button class="btn-sm btn-danger" id="blockProgramBtn">잠금</button>
-                        </div>
-                    </div>
-                    <div class="blocked-list" id="blockedList">
-                        <p class="blocked-empty">차단된 프로그램이 없습니다</p>
-                    </div>
+                <!-- Command History -->
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">명령 기록</h4>
+                    <div id="modalCommandHistory" class="text-xs text-center text-slate-400 py-4">명령 기록이 없습니다</div>
                 </div>
-                <!-- 명령 기록 -->
-                <div class="modal-section">
-                    <h4>📜 명령 기록</h4>
-                    <div class="command-history" id="modalCommandHistory">
-                        <div style="text-align: center; padding: 16px; color: var(--text-muted); font-size: 0.8rem;">명령
-                            기록이 없습니다</div>
+                <!-- File Transfer -->
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">파일/폴더 전송</h4>
+                    <div class="space-y-2">
+                        <input id="sendFilePath" type="text" placeholder="C:\파일경로\파일명.exe"
+                            class="w-full h-9 px-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30">
+                        <input id="sendFileDestPath" type="text" placeholder="저장 경로 (학생 PC)"
+                            class="w-full h-9 px-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30">
+                        <button id="sendFileBtn"
+                            class="w-full h-9 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary-dark transition">파일
+                            전송</button>
                     </div>
-                </div>
-                <!-- 파일 전송 -->
-                <div class="modal-section">
-                    <h4>📁 파일/폴더 전송</h4>
-                    <div class="form-group">
-                        <label>보낼 파일 경로 (관리자 PC)</label>
-                        <input type="text" id="sendFilePath" placeholder="C:\파일경로\파일명.exe">
-                    </div>
-                    <div class="form-group">
-                        <label>저장 경로 (학생 PC)</label>
-                        <input type="text" id="sendFileDestPath" placeholder="C:\Temp">
-                    </div>
-                    <button class="btn-primary" id="sendFileBtn">파일 전송</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Deploy Modal (PC 추가) - Ultra Enterprise v2.0 -->
+    <!-- ===== Deploy Modal ===== -->
     <div class="modal-overlay" id="deployModalOverlay">
-        <div class="modal modal-lg" id="deployModal">
-            <div class="modal-header">
-                <h3>🚀 원클릭 배포 시스템</h3>
-                <button class="modal-close" id="deployModalClose">&times;</button>
+        <div class="modal-panel max-w-xl">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                <h3 class="text-base font-bold text-slate-800">🚀 원클릭 배포 시스템</h3>
+                <button id="deployModalClose" class="modal-close-btn"><span
+                        class="material-symbols-outlined">close</span></button>
             </div>
-            <div class="modal-body">
-                <!-- 네트워크 스캔 -->
-                <div class="modal-section">
-                    <h4>🔍 네트워크 스캔</h4>
-                    <div class="scan-controls">
-                        <button class="btn-primary" id="networkScanBtn">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16"
-                                height="16">
-                                <circle cx="11" cy="11" r="8"></circle>
-                                <path d="M21 21l-4.35-4.35"></path>
-                            </svg>
+            <div class="p-6 space-y-5 max-h-[70vh] overflow-y-auto sidebar-scroll">
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">네트워크 스캔</h4>
+                    <div class="flex items-center gap-3 mb-3">
+                        <button id="networkScanBtn"
+                            class="inline-flex items-center gap-1.5 h-9 px-4 bg-primary text-white text-sm font-semibold rounded-lg hover:bg-primary-dark transition">
+                            <span class="material-symbols-outlined text-base">radar</span>
                             네트워크 스캔 시작
                         </button>
-                        <span class="scan-status" id="scanStatus"></span>
+                        <span id="scanStatus" class="text-xs text-slate-400"></span>
                     </div>
-                    <div class="scan-progress" id="scanProgress" style="display: none;">
-                        <div class="progress-bar full-width">
-                            <div class="progress-fill" id="scanProgressBar" style="width: 0%"></div>
+                    <div id="scanProgress" class="hidden mb-3">
+                        <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div id="scanProgressBar" class="h-full bg-primary rounded-full transition-all"
+                                style="width:0%"></div>
                         </div>
-                        <span class="scan-percent" id="scanPercent">0%</span>
+                        <span id="scanPercent" class="text-xs text-slate-400 mt-1">0%</span>
                     </div>
-                    <div class="scanned-pcs" id="scannedPcsList" style="display: none;">
-                        <p class="list-header">발견된 PC 목록 (클릭하여 선택)</p>
-                        <!-- 스캔된 PC 목록 -->
+                    <div id="scannedPcsList" class="hidden"></div>
+                </div>
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">대상 PC 정보</h4>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs text-slate-500 mb-1 block">IP 주소</label>
+                            <div class="flex gap-2">
+                                <input id="deployTargetIP" type="text" placeholder="192.168.0.100"
+                                    class="flex-1 h-9 px-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30">
+                                <button id="checkConnectionBtn"
+                                    class="h-9 px-3 text-xs border border-slate-200 rounded-lg hover:bg-slate-50 transition">✓
+                                    테스트</button>
+                            </div>
+                            <span id="connectionStatus" class="text-xs text-slate-400 mt-1"></span>
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 mb-1 block">관리자 계정</label>
+                            <input id="deployUsername" type="text" placeholder="Administrator"
+                                class="w-full h-9 px-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30">
+                        </div>
+                        <div>
+                            <label class="text-xs text-slate-500 mb-1 block">비밀번호</label>
+                            <input id="deployPassword" type="password" placeholder="••••••••"
+                                class="w-full h-9 px-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30">
+                        </div>
                     </div>
                 </div>
-
-                <!-- 수동 입력 또는 선택된 PC -->
-                <div class="modal-section">
-                    <h4>🎯 대상 PC 정보</h4>
-                    <div class="form-group">
-                        <label for="deployTargetIP">IP 주소</label>
-                        <div class="input-with-btn">
-                            <input type="text" id="deployTargetIP" placeholder="192.168.0.100 (스캔 또는 직접 입력)">
-                            <button class="btn-sm" id="checkConnectionBtn" title="연결 테스트">✓ 테스트</button>
-                        </div>
-                        <span class="connection-status" id="connectionStatus"></span>
-                    </div>
-                    <div class="form-group">
-                        <label for="deployUsername">관리자 계정</label>
-                        <input type="text" id="deployUsername" placeholder="Administrator">
-                    </div>
-                    <div class="form-group">
-                        <label for="deployPassword">비밀번호</label>
-                        <input type="password" id="deployPassword" placeholder="••••••••">
-                    </div>
+                <div id="deploySteps" class="hidden">
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">배포 진행 상태</h4>
+                    <div id="stepsList"></div>
                 </div>
-
-                <!-- 배포 진행 상태 -->
-                <div class="modal-section">
-                    <div class="deploy-steps" id="deploySteps" style="display: none;">
-                        <h4>📊 배포 진행 상태</h4>
-                        <div class="steps-list" id="stepsList">
-                            <!-- 단계별 진행 상태 표시 -->
-                        </div>
-                    </div>
-                    <div class="deploy-actions" id="deployActions">
-                        <button class="btn-secondary" id="deployCancelBtn">취소</button>
-                        <button class="btn-primary btn-lg" id="deployAutoBtn">
-                            🚀 원클릭 자동 배포
-                        </button>
-                    </div>
+                <div class="flex gap-3 pt-2" id="deployActions">
+                    <button id="deployCancelBtn"
+                        class="flex-1 h-10 border border-slate-200 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-50 transition">취소</button>
+                    <button id="deployAutoBtn"
+                        class="flex-1 h-10 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm font-bold rounded-lg hover:brightness-110 transition">🚀
+                        원클릭 자동 배포</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Block Management Modal -->
+    <!-- ===== Block Management Modal ===== -->
     <div class="modal-overlay" id="blockModalOverlay">
-        <div class="modal modal-lg">
-            <div class="modal-header">
-                <h3>🚫 차단 관리</h3>
-                <button class="modal-close" id="blockModalClose">&times;</button>
+        <div class="modal-panel max-w-xl">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                <h3 class="text-base font-bold text-slate-800">🚫 차단 관리</h3>
+                <button id="blockModalClose" class="modal-close-btn"><span
+                        class="material-symbols-outlined">close</span></button>
             </div>
-            <div class="modal-body">
-                <!-- 웹사이트 차단 -->
-                <div class="modal-section">
-                    <h4>🌐 웹사이트 차단</h4>
-                    <div class="block-input-group">
-                        <input type="text" id="newBlockedSite" placeholder="youtube.com">
-                        <button class="btn-primary" id="addBlockedSiteBtn">+ 추가</button>
+            <div class="p-6 space-y-5 max-h-[70vh] overflow-y-auto sidebar-scroll">
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">웹사이트 차단</h4>
+                    <div class="flex gap-2 mb-3">
+                        <input id="newBlockedSite" type="text" placeholder="youtube.com"
+                            class="flex-1 h-9 px-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30">
+                        <button id="addBlockedSiteBtn"
+                            class="h-9 px-4 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary-dark transition">+
+                            추가</button>
                     </div>
-                    <div class="blocked-list" id="blockedSitesList">
-                        <!-- 차단 사이트 목록 -->
-                    </div>
+                    <div id="blockedSitesList"></div>
                 </div>
-
-                <!-- 프로그램 차단 -->
-                <div class="modal-section">
-                    <h4>🎮 프로그램 차단</h4>
-                    <div class="block-input-group">
-                        <input type="text" id="newBlockedProgram" placeholder="chrome">
-                        <button class="btn-primary" id="addBlockedProgramBtn">+ 추가</button>
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">프로그램 차단</h4>
+                    <div class="flex gap-2 mb-3">
+                        <input id="newBlockedProgram" type="text" placeholder="chrome"
+                            class="flex-1 h-9 px-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30">
+                        <button id="addBlockedProgramBtn"
+                            class="h-9 px-4 bg-primary text-white text-xs font-semibold rounded-lg hover:bg-primary-dark transition">+
+                            추가</button>
                     </div>
-                    <div class="blocked-list" id="blockedProgramsList">
-                        <!-- 차단 프로그램 목록 -->
-                    </div>
+                    <div id="blockedProgramsList"></div>
                 </div>
-
-                <!-- 적용 대상 -->
-                <div class="modal-section">
-                    <h4>📡 적용 대상</h4>
-                    <div class="apply-target">
-                        <label class="radio-option">
-                            <input type="radio" name="applyTarget" value="all" checked>
-                            <span>모든 PC</span>
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">적용 대상</h4>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                            <input type="radio" name="applyTarget" value="all" checked
+                                class="text-primary focus:ring-primary">
+                            모든 PC
                         </label>
-                        <label class="radio-option">
-                            <input type="radio" name="applyTarget" value="selected">
-                            <span>선택된 PC만</span>
+                        <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                            <input type="radio" name="applyTarget" value="selected"
+                                class="text-primary focus:ring-primary">
+                            선택된 PC만
                         </label>
                     </div>
                 </div>
-
-                <div class="modal-actions">
-                    <button class="btn-secondary" id="blockModalCancelBtn">닫기</button>
-                    <button class="btn-primary" id="applyBlockingBtn">🚀 모든 PC에 적용</button>
+                <div class="flex gap-3 pt-2">
+                    <button id="blockModalCancelBtn"
+                        class="flex-1 h-10 border border-slate-200 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-50 transition">닫기</button>
+                    <button id="applyBlockingBtn"
+                        class="flex-1 h-10 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary-dark transition">🚀
+                        모든 PC에 적용</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- One-Click Full Setup Modal -->
+    <!-- ===== One-Click Setup Modal ===== -->
     <div class="modal-overlay" id="oneClickModalOverlay">
-        <div class="modal modal-lg" id="oneClickModal">
-            <div class="modal-header"
-                style="background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%); color: white;">
-                <h3>⚡ 원클릭 전체 설정</h3>
-                <button class="modal-close" id="oneClickModalClose" style="color: white;">&times;</button>
+        <div class="modal-panel max-w-xl">
+            <div
+                class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-gradient-to-r from-cyan-500 to-blue-500">
+                <h3 class="text-base font-bold text-white">⚡ 원클릭 전체 설정</h3>
+                <button id="oneClickModalClose" class="modal-close-btn !text-white !border-white/30"><span
+                        class="material-symbols-outlined">close</span></button>
             </div>
-            <div class="modal-body">
-                <!-- 자격 증명 입력 -->
-                <div class="modal-section">
-                    <h4>🔐 관리자 자격 증명</h4>
-                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 12px;">
-                        학생 PC 공통 관리자 계정을 입력하세요. 한 번 입력하면 저장됩니다.
-                    </p>
-                    <div class="form-group">
-                        <label for="oneClickUsername">사용자명</label>
-                        <input type="text" id="oneClickUsername" placeholder="Administrator">
-                    </div>
-                    <div class="form-group">
-                        <label for="oneClickPassword">비밀번호</label>
-                        <input type="password" id="oneClickPassword" placeholder="••••••••">
-                    </div>
-                </div>
-
-                <!-- 진행 상태 -->
-                <div class="modal-section" id="oneClickProgressSection" style="display: none;">
-                    <h4>📊 진행 상태</h4>
-                    <div class="oneclick-progress-container">
-                        <div class="progress-bar full-width">
-                            <div class="progress-fill" id="oneClickProgressBar" style="width: 0%"></div>
+            <div class="p-6 space-y-5 max-h-[70vh] overflow-y-auto sidebar-scroll">
+                <div>
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">관리자 자격 증명</h4>
+                    <p class="text-xs text-slate-400 mb-3">학생 PC 공통 관리자 계정을 입력하세요.</p>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs text-slate-500 mb-1 block">사용자명</label>
+                            <input id="oneClickUsername" type="text" placeholder="Administrator"
+                                class="w-full h-9 px-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30">
                         </div>
-                        <div class="oneclick-status" id="oneClickStatus">준비 중...</div>
-                        <div class="oneclick-log" id="oneClickLog"
-                            style="max-height: 200px; overflow-y: auto; background: var(--bg-deep); border-radius: 8px; padding: 12px; margin-top: 12px; font-size: 0.85rem;">
-                            <!-- 로그가 여기에 추가됨 -->
+                        <div>
+                            <label class="text-xs text-slate-500 mb-1 block">비밀번호</label>
+                            <input id="oneClickPassword" type="password" placeholder="••••••••"
+                                class="w-full h-9 px-3 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30">
                         </div>
                     </div>
                 </div>
-
-                <!-- 결과 요약 -->
-                <div class="modal-section" id="oneClickResultSection" style="display: none;">
-                    <h4>📋 결과 요약</h4>
-                    <div class="result-summary" id="oneClickResultSummary">
-                        <!-- 결과가 여기에 표시됨 -->
+                <div id="oneClickProgressSection" class="hidden">
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">진행 상태</h4>
+                    <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden mb-2">
+                        <div id="oneClickProgressBar"
+                            class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full transition-all"
+                            style="width:0%"></div>
+                    </div>
+                    <p id="oneClickStatus" class="text-xs text-slate-500">준비 중...</p>
+                    <div id="oneClickLog"
+                        class="mt-3 max-h-[150px] overflow-y-auto bg-slate-50 rounded-lg p-3 text-xs text-slate-500 sidebar-scroll">
                     </div>
                 </div>
-
-                <div class="deploy-actions">
-                    <button class="btn-secondary" id="oneClickCancelBtn">닫기</button>
-                    <button class="btn-primary btn-lg" id="oneClickStartBtn"
-                        style="background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);">
-                        ⚡ 원클릭 설정 시작
-                    </button>
+                <div id="oneClickResultSection" class="hidden">
+                    <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">결과 요약</h4>
+                    <div id="oneClickResultSummary"></div>
+                </div>
+                <div class="flex gap-3 pt-2">
+                    <button id="oneClickCancelBtn"
+                        class="flex-1 h-10 border border-slate-200 text-sm font-medium text-slate-600 rounded-lg hover:bg-slate-50 transition">닫기</button>
+                    <button id="oneClickStartBtn"
+                        class="flex-1 h-10 bg-gradient-to-r from-cyan-500 to-blue-500 text-white text-sm font-bold rounded-lg hover:brightness-110 transition">⚡
+                        원클릭 설정 시작</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Screenshot Viewer Modal -->
+    <!-- ===== Screenshot Viewer Modal ===== -->
     <div class="modal-overlay" id="screenshotModalOverlay">
-        <div class="modal modal-lg">
-            <div class="modal-header">
-                <h3>📸 스크린샷 뷰어</h3>
-                <button class="modal-close" onclick="dashboard.closeScreenshotModal()">&times;</button>
+        <div class="modal-panel max-w-3xl">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                <h3 class="text-base font-bold text-slate-800">📸 스크린샷 뷰어</h3>
+                <button onclick="dashboard.closeScreenshotModal()" class="modal-close-btn"><span
+                        class="material-symbols-outlined">close</span></button>
             </div>
-            <div class="modal-body">
-                <div class="screenshot-grid" id="screenshotGrid">
-                    <div class="screenshot-empty">
-                        <p>스크린샷이 없습니다</p>
-                        <span>PC를 선택하고 스크린샷 버튼을 누르세요</span>
+            <div class="p-6">
+                <div id="screenshotGrid" class="grid grid-cols-2 gap-3">
+                    <div class="flex flex-col items-center justify-center py-10 text-slate-300 col-span-2">
+                        <span class="material-symbols-outlined text-3xl mb-2">image</span>
+                        <p class="text-xs text-slate-400">스크린샷이 없습니다</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Bulk Message Modal -->
+    <!-- ===== Bulk Message Modal ===== -->
     <div class="modal-overlay" id="bulkMessageModalOverlay">
-        <div class="modal">
-            <div class="modal-header">
-                <h3>💬 전체 메시지 전송</h3>
-                <button class="modal-close" onclick="dashboard.closeBulkMessageModal()">&times;</button>
+        <div class="modal-panel max-w-md">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                <h3 class="text-base font-bold text-slate-800">💬 전체 메시지 전송</h3>
+                <button onclick="dashboard.closeBulkMessageModal()" class="modal-close-btn"><span
+                        class="material-symbols-outlined">close</span></button>
             </div>
-            <div class="modal-body">
-                <div class="modal-section">
-                    <div class="form-group">
-                        <label>모든 온라인 PC에 메시지를 전송합니다</label>
-                        <textarea id="bulkMessageInput" rows="3" placeholder="전체 학생에게 전달할 메시지를 입력하세요..."></textarea>
-                    </div>
-                    <button class="btn-primary btn-lg" style="width:100%" onclick="dashboard.sendBulkMessage()">
-                        📨 전체 전송
-                    </button>
-                </div>
+            <div class="p-6 space-y-4">
+                <label class="text-xs text-slate-400 block">모든 온라인 PC에 메시지를 전송합니다</label>
+                <textarea id="bulkMessageInput" rows="3" placeholder="전체 학생에게 전달할 메시지..."
+                    class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/30"></textarea>
+                <button onclick="dashboard.sendBulkMessage()"
+                    class="w-full h-10 bg-primary text-white text-sm font-bold rounded-lg hover:bg-primary-dark transition">📨
+                    전체 전송</button>
             </div>
         </div>
     </div>
 
-    <!-- Live Viewer Modal -->
-    <div class="liveview-overlay" id="liveViewOverlay">
-        <div class="liveview-header">
-            <div class="liveview-title">
-                <span class="liveview-dot"></span>
-                <span id="liveViewPcName">PC-01</span>
-                <span class="liveview-badge">LIVE</span>
+    <!-- ===== Live View Overlay ===== -->
+    <div class="fixed inset-0 bg-black/95 z-[200] hidden flex-col" id="liveViewOverlay">
+        <div class="flex items-center justify-between px-6 py-3 bg-black/50 backdrop-blur">
+            <div class="flex items-center gap-3">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                <span class="text-white font-bold text-sm" id="liveViewPcName">—</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 bg-red-500/20 text-red-400 rounded-full">LIVE</span>
             </div>
-            <div class="liveview-stats">
+            <div class="flex items-center gap-4 text-xs text-slate-400">
                 <span id="liveViewFps">0 FPS</span>
                 <span id="liveViewQuality">Q: 0%</span>
                 <span id="liveViewBandwidth">0 KB/s</span>
             </div>
-            <div class="liveview-controls">
-                <label class="liveview-slider-group">
-                    <span>FPS</span>
-                    <input type="range" id="liveViewFpsSlider" min="2" max="10" value="5"
+            <div class="flex items-center gap-3">
+                <label class="flex items-center gap-2 text-xs text-slate-400">
+                    FPS
+                    <input type="range" id="liveViewFpsSlider" min="2" max="10" value="5" class="w-16"
                         oninput="dashboard.updateStreamSettings()">
                     <span id="liveViewFpsValue">5</span>
                 </label>
-                <label class="liveview-slider-group">
-                    <span>품질</span>
-                    <input type="range" id="liveViewQualitySlider" min="10" max="80" value="40"
+                <label class="flex items-center gap-2 text-xs text-slate-400">
+                    품질
+                    <input type="range" id="liveViewQualitySlider" min="10" max="80" value="40" class="w-16"
                         oninput="dashboard.updateStreamSettings()">
                     <span id="liveViewQualityValue">40</span>
                 </label>
-                <button class="liveview-close" onclick="dashboard.stopLiveView()">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="24" height="24">
-                        <line x1="18" y1="6" x2="6" y2="18"></line>
-                        <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
+                <button onclick="dashboard.stopLiveView()"
+                    class="w-8 h-8 flex items-center justify-center text-white hover:text-red-400 transition">
+                    <span class="material-symbols-outlined">close</span>
                 </button>
             </div>
         </div>
-        <div class="liveview-canvas-container">
+        <div class="flex-1 flex items-center justify-center relative">
             <canvas id="liveViewCanvas"></canvas>
-            <div class="liveview-placeholder" id="liveViewPlaceholder">
-                <div class="liveview-loading">
-                    <div class="liveview-spinner"></div>
-                    <p>화면 스트림 연결 중...</p>
-                </div>
+            <div id="liveViewPlaceholder"
+                class="absolute inset-0 flex flex-col items-center justify-center text-white/50">
+                <div class="w-8 h-8 border-2 border-white/30 border-t-white/80 rounded-full animate-spin mb-3"></div>
+                <p class="text-sm">화면 스트림 연결 중...</p>
             </div>
         </div>
     </div>
 
-    <!-- Command Palette (Ctrl+K) -->
-    <div class="command-palette-overlay" id="commandPaletteOverlay">
-        <div class="command-palette">
-            <input type="text" class="command-palette-input" id="commandPaletteInput"
-                placeholder="명령어 검색... (PC 이름, 명령, 기능)" autocomplete="off">
-            <div class="command-palette-results" id="commandPaletteResults"></div>
+    <!-- ===== Command Palette ===== -->
+    <div class="modal-overlay" id="commandPaletteOverlay">
+        <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden mt-[15vh]"
+            style="margin-left:auto;margin-right:auto;">
+            <input type="text" id="commandPaletteInput" placeholder="명령어 검색... (PC 이름, 명령, 기능)" autocomplete="off"
+                class="w-full h-12 px-5 text-sm border-b border-slate-100 focus:outline-none placeholder:text-slate-300">
+            <div id="commandPaletteResults" class="max-h-[300px] overflow-y-auto"></div>
         </div>
     </div>
 
-    <!-- Multi-PC Thumbnail Grid -->
-    <div class="thumbnail-grid-overlay" id="thumbnailGridOverlay">
-        <div class="thumbnail-grid-header">
-            <h3>📺 전체 PC 화면 모니터링</h3>
-            <button class="modal-close" onclick="dashboard.closeThumbnailGrid()">&times;</button>
+    <!-- ===== Thumbnail Grid Overlay ===== -->
+    <div class="fixed inset-0 bg-black/90 z-[200] hidden flex-col" id="thumbnailGridOverlay">
+        <div class="flex items-center justify-between px-6 py-4">
+            <h3 class="text-white font-bold">📺 전체 PC 화면 모니터링</h3>
+            <button onclick="dashboard.closeThumbnailGrid()" class="text-white hover:text-red-400 transition">
+                <span class="material-symbols-outlined text-2xl">close</span>
+            </button>
         </div>
-        <div class="thumbnail-grid" id="thumbnailGrid"></div>
+        <div class="flex-1 overflow-y-auto p-6" id="thumbnailGrid"></div>
     </div>
 
-    <!-- Toast Container -->
-    <div class="toast-container" id="toastContainer"></div>
+    <!-- ===== Toast Container ===== -->
+    <div class="fixed bottom-6 right-6 z-[300] space-y-2" id="toastContainer"></div>
 
     <script src="app.js"></script>
 </body>

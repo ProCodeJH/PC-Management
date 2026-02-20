@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학생 활동 로그 — Enterprise PC Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2563eb", "primary-dark": "#1e40af", "primary-light": "#dbeafe",
+                        "secondary": "#64748b", "bg-base": "#f1f5f9", "surface": "#ffffff", "border-c": "#e2e8f0",
+                    },
+                    fontFamily: { "display": ["Inter", "sans-serif"], "body": ["Inter", "sans-serif"] },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1rem" },
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="bg-bg-base font-display text-slate-800 antialiased overflow-hidden">
+    <div class="flex h-screen w-full overflow-hidden">
+
+        <!-- Sidebar -->
+        <aside class="hidden md:flex flex-col w-64 bg-white border-r border-border-c flex-shrink-0 shadow-sm z-10">
+            <div class="flex items-center gap-3 px-5 py-5 border-b border-slate-100">
+                <div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center"><span
+                        class="material-symbols-outlined text-white text-xl"
+                        style="font-variation-settings:'FILL' 1">dashboard</span></div>
+                <div>
+                    <p class="text-sm font-bold text-slate-800 leading-tight">Enterprise</p>
+                    <p class="text-xs text-slate-400 leading-tight">PC Manager</p>
+                </div>
+            </div>
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto sidebar-scroll">
+                <p class="px-3 pb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Overview</p>
+                <a href="index.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">space_dashboard</span><span>대시보드</span></a>
+                <a href="classroom.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">grid_view</span><span>교실 모니터링</span></a>
+                <a href="student.html" class="nav-link active"><span
+                        class="material-symbols-outlined text-[20px]">person_search</span><span>학생 활동 로그</span></a>
+                <p class="px-3 pt-5 pb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Management
+                </p>
+                <a href="communication.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">forum</span><span>커뮤니케이션</span></a>
+                <a href="deployment.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">deployed_code</span><span>배포 & 설정</span></a>
+                <a href="analytics.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">monitoring</span><span>AI 분석</span></a>
+                <p class="px-3 pt-5 pb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">System</p>
+                <a href="#" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">settings</span><span>설정</span></a>
+            </nav>
+            <div class="px-5 py-4 border-t border-slate-100">
+                <div class="flex items-center gap-2 text-xs text-slate-400"><span
+                        class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span>시스템 정상</span></div>
+                <p class="text-[10px] text-slate-300 mt-1">v4.0.0</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col h-full overflow-hidden relative bg-slate-50/50">
+            <header
+                class="flex items-center justify-between px-6 h-16 bg-white/80 backdrop-blur border-b border-border-c flex-shrink-0">
+                <div>
+                    <h1 class="text-lg font-bold text-slate-800">학생 활동 로그</h1>
+                    <p class="text-xs text-slate-400 -mt-0.5">Student PC Activity Log</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="header-icon-btn"><span
+                            class="material-symbols-outlined text-lg">refresh</span></button>
+                    <div class="flex items-center gap-2 pl-3 border-l border-slate-200">
+                        <div
+                            class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
+                            A</div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-y-auto p-6 space-y-5">
+                <div class="grid grid-cols-1 xl:grid-cols-[320px_1fr] gap-5">
+
+                    <!-- Left: Student Profile Card -->
+                    <div class="space-y-4">
+                        <!-- Profile -->
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                            <div class="flex items-center gap-4 mb-4">
+                                <div
+                                    class="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-blue-400 flex items-center justify-center text-white text-xl font-bold shadow-md">
+                                    김</div>
+                                <div>
+                                    <p class="text-base font-bold text-slate-800">—</p>
+                                    <p class="text-xs text-slate-400">—</p>
+                                    <div class="flex items-center gap-1 mt-1">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                        <span class="text-[10px] font-semibold text-emerald-600">온라인</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="bg-slate-50 rounded-lg p-3 text-center">
+                                    <p class="text-[10px] text-slate-400">오늘 사용시간</p>
+                                    <p class="text-lg font-bold text-slate-800">—</p>
+                                </div>
+                                <div class="bg-slate-50 rounded-lg p-3 text-center">
+                                    <p class="text-[10px] text-slate-400">집중도</p>
+                                    <p class="text-lg font-bold text-emerald-600">—</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Session Overview -->
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">세션 개요</h3>
+                            <div class="space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-slate-500">로그인 시간</span>
+                                    <span class="text-xs font-semibold text-slate-700">—</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-slate-500">활성 앱 수</span>
+                                    <span class="text-xs font-semibold text-slate-700">0개</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-slate-500">경고 횟수</span>
+                                    <span class="text-xs font-semibold text-amber-600">0회</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs text-slate-500">차단된 시도</span>
+                                    <span class="text-xs font-semibold text-red-500">0회</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions -->
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                            <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">빠른 작업</h3>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button class="control-chip"><span
+                                        class="material-symbols-outlined text-base">chat</span>메시지</button>
+                                <button class="control-chip"><span
+                                        class="material-symbols-outlined text-base">lock</span>잠금</button>
+                                <button class="control-chip"><span
+                                        class="material-symbols-outlined text-base">screenshot_monitor</span>캡처</button>
+                                <button class="control-chip"><span
+                                        class="material-symbols-outlined text-base">visibility</span>실시간</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Activity Content -->
+                    <div class="space-y-4">
+                        <!-- System Performance -->
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-primary text-lg">speed</span>
+                                    <h2 class="text-sm font-bold text-slate-800">시스템 성능</h2>
+                                </div>
+                                <span class="text-xs text-slate-400">실시간</span>
+                            </div>
+                            <div class="p-5">
+                                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                                    <div class="bg-blue-50/50 rounded-xl p-4 border border-blue-100">
+                                        <p class="text-[10px] font-medium text-blue-400 mb-1">CPU</p>
+                                        <p class="text-2xl font-bold text-blue-600">—</p>
+                                        <div class="h-1 bg-blue-100 rounded-full mt-2 overflow-hidden">
+                                            <div class="h-full bg-blue-500 rounded-full" style="width:0%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-violet-50/50 rounded-xl p-4 border border-violet-100">
+                                        <p class="text-[10px] font-medium text-violet-400 mb-1">메모리</p>
+                                        <p class="text-2xl font-bold text-violet-600">—</p>
+                                        <div class="h-1 bg-violet-100 rounded-full mt-2 overflow-hidden">
+                                            <div class="h-full bg-violet-500 rounded-full" style="width:0%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-emerald-50/50 rounded-xl p-4 border border-emerald-100">
+                                        <p class="text-[10px] font-medium text-emerald-400 mb-1">디스크</p>
+                                        <p class="text-2xl font-bold text-emerald-600">—</p>
+                                        <div class="h-1 bg-emerald-100 rounded-full mt-2 overflow-hidden">
+                                            <div class="h-full bg-emerald-500 rounded-full" style="width:0%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="bg-amber-50/50 rounded-xl p-4 border border-amber-100">
+                                        <p class="text-[10px] font-medium text-amber-400 mb-1">네트워크</p>
+                                        <p class="text-2xl font-bold text-amber-600">—</p>
+                                        <div class="h-1 bg-amber-100 rounded-full mt-2 overflow-hidden">
+                                            <div class="h-full bg-amber-500 rounded-full" style="width:0%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- App Usage Timeline -->
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-emerald-500 text-lg">timeline</span>
+                                    <h2 class="text-sm font-bold text-slate-800">앱 사용 타임라인</h2>
+                                </div>
+                            </div>
+                            <div class="p-5">
+                                <div class="flex flex-col items-center justify-center py-8 text-slate-300">
+                                    <span class="material-symbols-outlined text-3xl mb-2">timeline</span>
+                                    <p class="text-xs text-slate-400">앱 사용 기록이 없습니다</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Visited Websites -->
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                            <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                                <div class="flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-blue-500 text-lg">language</span>
+                                    <h2 class="text-sm font-bold text-slate-800">방문 웹사이트</h2>
+                                </div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-xs">
+                                    <thead>
+                                        <tr class="bg-slate-50">
+                                            <th class="text-left px-5 py-2.5 font-semibold text-slate-400">시간</th>
+                                            <th class="text-left px-5 py-2.5 font-semibold text-slate-400">URL</th>
+                                            <th class="text-left px-5 py-2.5 font-semibold text-slate-400">제목</th>
+                                            <th class="text-left px-5 py-2.5 font-semibold text-slate-400">상태</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-50">
+                                        <tr>
+                                            <td colspan="4" class="px-5 py-8 text-center text-slate-300">
+                                                <span
+                                                    class="material-symbols-outlined text-2xl block mb-1">language</span>
+                                                방문 기록이 없습니다
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+    <script>
+            (function () {
+                const socket = io({ transports: ['websocket', 'polling'] });
+                const urlParams = new URLSearchParams(window.location.search);
+                let selectedPC = urlParams.get('pc') || null;
+                let allPCs = [];
+
+                // === Load PCs ===
+                async function loadPCs() {
+                    try {
+                        const res = await fetch('/api/pcs');
+                        const data = await res.json();
+                        allPCs = data.pcs || data || [];
+                        if (!selectedPC && allPCs.length > 0) {
+                            selectedPC = allPCs[0].pc_name || allPCs[0].name;
+                        }
+                        renderPCSelector();
+                        if (selectedPC) loadPCDetail();
+                    } catch (e) { console.error('Load error:', e); }
+                }
+
+                // === PC Selector ===
+                function renderPCSelector() {
+                    const header = document.querySelector('header .flex.items-center.gap-3');
+                    let sel = document.getElementById('pcSelector');
+                    if (!sel) {
+                        sel = document.createElement('select');
+                        sel.id = 'pcSelector';
+                        sel.className = 'h-9 px-3 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30';
+                        sel.addEventListener('change', (e) => { selectedPC = e.target.value; loadPCDetail(); });
+                        header.insertBefore(sel, header.firstChild);
+                    }
+                    sel.innerHTML = allPCs.length === 0
+                        ? '<option value="">PC 없음</option>'
+                        : allPCs.map(pc => {
+                            const n = pc.pc_name || pc.name;
+                            return `<option value="${n}" ${n === selectedPC ? 'selected' : ''}>${n} (${pc.status || 'offline'})</option>`;
+                        }).join('');
+                }
+
+                // === Load Detail ===
+                async function loadPCDetail() {
+                    const pc = allPCs.find(p => (p.pc_name || p.name) === selectedPC);
+                    if (!pc) return;
+
+                    // Profile
+                    const name = pc.pc_name || pc.name;
+                    const initial = name.charAt(0).toUpperCase();
+                    const isOn = pc.status === 'online';
+
+                    // Avatar
+                    const avatar = document.querySelector('.w-14.h-14');
+                    if (avatar) avatar.textContent = initial;
+
+                    // Name & seat
+                    const profileTexts = document.querySelectorAll('.text-base.font-bold.text-slate-800');
+                    if (profileTexts[0]) profileTexts[0].textContent = name;
+                    const seatText = document.querySelector('.w-14.h-14')?.parentElement?.querySelector('.text-xs.text-slate-400');
+                    if (seatText) seatText.textContent = pc.ip_address || '—';
+
+                    // Status dot
+                    const statusDot = document.querySelector('.w-2.h-2.rounded-full');
+                    const statusText = document.querySelector('.text-\\[10px\\].font-semibold');
+                    if (statusDot) statusDot.className = `w-2 h-2 rounded-full ${isOn ? 'bg-emerald-400' : 'bg-slate-300'}`;
+                    if (statusText) { statusText.textContent = isOn ? '온라인' : '오프라인'; statusText.className = `text-[10px] font-semibold ${isOn ? 'text-emerald-600' : 'text-slate-400'}`; }
+
+                    // Usage time & focus
+                    const statVals = document.querySelectorAll('.bg-slate-50.rounded-lg.p-3 .text-lg.font-bold');
+                    if (statVals[0]) statVals[0].textContent = pc.uptime ? formatTime(pc.uptime) : (isOn ? '활성' : '—');
+                    if (statVals[1]) { statVals[1].textContent = pc.cpu_usage != null ? `${Math.max(0, 100 - Math.round(pc.cpu_usage))}%` : '—'; }
+
+                    // Session Info
+                    const sessionVals = document.querySelectorAll('.space-y-3 .text-xs.font-semibold');
+                    if (sessionVals[0]) sessionVals[0].textContent = pc.last_seen ? new Date(pc.last_seen).toLocaleTimeString('ko-KR') : '—';
+                    if (sessionVals[1]) sessionVals[1].textContent = pc.active_apps ? `${pc.active_apps}개` : '0개';
+
+                    // System Performance
+                    updateMetric(0, pc.cpu_usage, 'blue');
+                    updateMetric(1, pc.memory_usage, 'violet');
+                    updateMetric(2, pc.disk_usage, 'emerald');
+                    updateMetric(3, pc.network_speed, 'amber');
+
+                    // Activity logs
+                    loadLogs(name);
+                }
+
+                function updateMetric(idx, val, color) {
+                    const cards = document.querySelectorAll('.grid.grid-cols-2.lg\\:grid-cols-4 > div');
+                    if (!cards[idx]) return;
+                    const valEl = cards[idx].querySelector('.text-2xl');
+                    const bar = cards[idx].querySelector(`.bg-${color}-500, .bg-${color}-400, [class*="bg-${color}"]`);
+                    const pct = val != null ? Math.round(val) : null;
+                    if (valEl) valEl.textContent = pct != null ? `${pct}%` : '—';
+                    const barDiv = cards[idx].querySelector('.h-full');
+                    if (barDiv) barDiv.style.width = pct != null ? `${pct}%` : '0%';
+                }
+
+                // === Load Logs ===
+                async function loadLogs(pcName) {
+                    try {
+                        const res = await fetch(`/api/logs?limit=20&pc_name=${encodeURIComponent(pcName)}`);
+                        const data = await res.json();
+                        const logs = data.logs || data || [];
+                        renderTimeline(logs);
+                        renderWebsites(logs);
+                    } catch (e) { console.error('Logs error:', e); }
+                }
+
+                function renderTimeline(logs) {
+                    const container = document.querySelector('.flex.flex-col.items-center.justify-center.py-8')?.parentElement;
+                    if (!container) return;
+                    const appLogs = logs.filter(l => l.type === 'app-switch' || l.type === 'process' || l.action);
+                    if (appLogs.length === 0) {
+                        container.innerHTML = '<div class="flex flex-col items-center justify-center py-8 text-slate-300"><span class="material-symbols-outlined text-3xl mb-2">timeline</span><p class="text-xs text-slate-400">앱 사용 기록이 없습니다</p></div>';
+                        return;
+                    }
+                    container.innerHTML = appLogs.slice(0, 10).map(log => `
+                <div class="flex items-center gap-3 py-2 border-b border-slate-50">
+                    <span class="material-symbols-outlined text-primary text-base">apps</span>
+                    <div class="flex-1">
+                        <p class="text-xs font-medium text-slate-700">${log.details || log.action || log.type}</p>
+                        <p class="text-[10px] text-slate-400">${new Date(log.timestamp || log.created_at).toLocaleTimeString('ko-KR')}</p>
+                    </div>
+                </div>
+            `).join('');
+                }
+
+                function renderWebsites(logs) {
+                    const tbody = document.querySelector('tbody');
+                    if (!tbody) return;
+                    const urlLogs = logs.filter(l => l.type === 'url-visit' || (l.details && l.details.includes('http')));
+                    if (urlLogs.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="px-5 py-8 text-center text-slate-300"><span class="material-symbols-outlined text-2xl block mb-1">language</span>방문 기록이 없습니다</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = urlLogs.slice(0, 10).map(log => `
+                <tr class="hover:bg-slate-50">
+                    <td class="px-5 py-2.5 text-slate-500">${new Date(log.timestamp || log.created_at).toLocaleTimeString('ko-KR')}</td>
+                    <td class="px-5 py-2.5 text-primary font-medium">${log.url || log.details || '—'}</td>
+                    <td class="px-5 py-2.5 text-slate-600">${log.title || '—'}</td>
+                    <td class="px-5 py-2.5"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${log.blocked ? 'bg-red-50 text-red-500' : 'bg-emerald-50 text-emerald-600'}">${log.blocked ? '차단' : '허용'}</span></td>
+                </tr>
+            `).join('');
+                }
+
+                // === Quick Actions ===
+                document.querySelectorAll('.control-chip').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (!selectedPC) return showToast('PC를 먼저 선택하세요', true);
+                        const icon = btn.querySelector('.material-symbols-outlined')?.textContent;
+                        const cmdMap = { chat: 'message', lock: 'lock', screenshot_monitor: 'screenshot', visibility: 'start-stream' };
+                        const cmd = cmdMap[icon];
+                        if (!cmd) return;
+                        if (cmd === 'message') {
+                            const msg = prompt('메시지 입력:');
+                            if (!msg) return;
+                            await fetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: cmd, message: msg }) });
+                        } else {
+                            await fetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: cmd }) });
+                        }
+                        showToast(`${selectedPC}: ${cmd} 전송 완료`);
+                    });
+                });
+
+                // === Refresh ===
+                document.querySelectorAll('button').forEach(btn => {
+                    if (btn.querySelector('.material-symbols-outlined')?.textContent === 'refresh') {
+                        btn.addEventListener('click', loadPCs);
+                    }
+                });
+
+                // === WebSocket ===
+                socket.on('pc-updated', (data) => {
+                    const name = data.pc_name || data.name;
+                    const idx = allPCs.findIndex(p => (p.pc_name || p.name) === name);
+                    if (idx >= 0) { allPCs[idx] = { ...allPCs[idx], ...data }; if (name === selectedPC) loadPCDetail(); }
+                });
+
+                // === Helpers ===
+                function formatTime(seconds) {
+                    const h = Math.floor(seconds / 3600);
+                    const m = Math.floor((seconds % 3600) / 60);
+                    return h > 0 ? `${h}h ${m}m` : `${m}m`;
+                }
+                function showToast(msg, isError = false) {
+                    const t = document.createElement('div');
+                    t.className = `fixed bottom-5 right-5 px-4 py-3 rounded-xl shadow-lg text-sm font-medium z-50 ${isError ? 'bg-red-500 text-white' : 'bg-white text-slate-800 border border-slate-200'}`;
+                    t.textContent = msg; document.body.appendChild(t);
+                    setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
+                }
+
+                loadPCs();
+                setInterval(loadPCs, 15000);
+            })();
+    </script>
+</body>
+
+</html>

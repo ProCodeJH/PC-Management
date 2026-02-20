@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 분석 — Enterprise PC Manager</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#2563eb", "primary-dark": "#1e40af", "primary-light": "#dbeafe",
+                        "secondary": "#64748b", "bg-base": "#f1f5f9", "surface": "#ffffff", "border-c": "#e2e8f0",
+                    },
+                    fontFamily: { "display": ["Inter", "sans-serif"], "body": ["Inter", "sans-serif"] },
+                    borderRadius: { "DEFAULT": "0.5rem", "lg": "0.75rem", "xl": "1rem" },
+                },
+            },
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="bg-bg-base font-display text-slate-800 antialiased overflow-hidden">
+    <div class="flex h-screen w-full overflow-hidden">
+
+        <!-- Sidebar -->
+        <aside class="hidden md:flex flex-col w-64 bg-white border-r border-border-c flex-shrink-0 shadow-sm z-10">
+            <div class="flex items-center gap-3 px-5 py-5 border-b border-slate-100">
+                <div class="w-9 h-9 rounded-lg bg-primary flex items-center justify-center"><span
+                        class="material-symbols-outlined text-white text-xl"
+                        style="font-variation-settings:'FILL' 1">dashboard</span></div>
+                <div>
+                    <p class="text-sm font-bold text-slate-800 leading-tight">Enterprise</p>
+                    <p class="text-xs text-slate-400 leading-tight">PC Manager</p>
+                </div>
+            </div>
+            <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto sidebar-scroll">
+                <p class="px-3 pb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Overview</p>
+                <a href="index.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">space_dashboard</span><span>대시보드</span></a>
+                <a href="classroom.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">grid_view</span><span>교실 모니터링</span></a>
+                <a href="student.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">person_search</span><span>학생 활동 로그</span></a>
+                <p class="px-3 pt-5 pb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Management
+                </p>
+                <a href="communication.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">forum</span><span>커뮤니케이션</span></a>
+                <a href="deployment.html" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">deployed_code</span><span>배포 & 설정</span></a>
+                <a href="analytics.html" class="nav-link active"><span
+                        class="material-symbols-outlined text-[20px]">monitoring</span><span>AI 분석</span></a>
+                <p class="px-3 pt-5 pb-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">System</p>
+                <a href="#" class="nav-link"><span
+                        class="material-symbols-outlined text-[20px]">settings</span><span>설정</span></a>
+            </nav>
+            <div class="px-5 py-4 border-t border-slate-100">
+                <div class="flex items-center gap-2 text-xs text-slate-400"><span
+                        class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span><span>시스템 정상</span></div>
+                <p class="text-[10px] text-slate-300 mt-1">v4.0.0</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col h-full overflow-hidden relative bg-slate-50/50">
+            <header
+                class="flex items-center justify-between px-6 h-16 bg-white/80 backdrop-blur border-b border-border-c flex-shrink-0">
+                <div>
+                    <h1 class="text-lg font-bold text-slate-800">AI 분석 대시보드</h1>
+                    <p class="text-xs text-slate-400 -mt-0.5">AI Analytics Dashboard</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <!-- Period Selector -->
+                    <div class="flex items-center bg-slate-100 rounded-lg p-0.5 text-xs">
+                        <button
+                            class="px-3 py-1.5 rounded-md font-medium text-slate-400 hover:text-slate-600 transition">일간</button>
+                        <button class="px-3 py-1.5 bg-white rounded-md font-semibold text-primary shadow-sm">주간</button>
+                        <button
+                            class="px-3 py-1.5 rounded-md font-medium text-slate-400 hover:text-slate-600 transition">월간</button>
+                    </div>
+                    <button class="header-icon-btn"><span
+                            class="material-symbols-outlined text-lg">refresh</span></button>
+                    <div class="flex items-center gap-2 pl-3 border-l border-slate-200">
+                        <div
+                            class="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold">
+                            A</div>
+                    </div>
+                </div>
+            </header>
+
+            <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+                <!-- AI Insight Banner -->
+                <div class="bg-gradient-to-r from-violet-500 to-indigo-500 rounded-xl p-5 shadow-md">
+                    <div class="flex items-start gap-4">
+                        <div
+                            class="w-12 h-12 rounded-xl bg-white/20 backdrop-blur flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined text-white text-2xl"
+                                style="font-variation-settings:'FILL' 1">auto_awesome</span>
+                        </div>
+                        <div>
+                            <h2 class="text-sm font-bold text-white mb-1">AI 인사이트 요약</h2>
+                            <p class="text-xs text-white/80 leading-relaxed">AI 분석 데이터가 아직 없습니다. PC가 연결되면 자동으로 분석이
+                                시작됩니다.
+                            </p>
+                            <div class="flex items-center gap-3 mt-3">
+                                <button
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-white/20 text-white text-xs font-semibold rounded-lg hover:bg-white/30 transition backdrop-blur">
+                                    <span class="material-symbols-outlined text-sm">description</span>상세 보고서
+                                </button>
+                                <button
+                                    class="inline-flex items-center gap-1 px-3 py-1.5 bg-white text-indigo-600 text-xs font-semibold rounded-lg hover:bg-white/90 transition">
+                                    <span class="material-symbols-outlined text-sm">download</span>PDF 다운로드
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Row -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="stat-card">
+                        <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined text-primary text-xl"
+                                style="font-variation-settings:'FILL' 1">trending_up</span>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-semibold text-slate-400 uppercase">평균 집중도</p>
+                            <p class="text-xl font-bold text-slate-800">—</p>
+                            <p class="text-[10px] text-emerald-500 font-semibold">—</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined text-emerald-500 text-xl"
+                                style="font-variation-settings:'FILL' 1">schedule</span>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-semibold text-slate-400 uppercase">평균 사용시간</p>
+                            <p class="text-xl font-bold text-slate-800">—</p>
+                            <p class="text-[10px] text-emerald-500 font-semibold">—</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="w-11 h-11 rounded-xl bg-red-50 flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined text-red-500 text-xl"
+                                style="font-variation-settings:'FILL' 1">block</span>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-semibold text-slate-400 uppercase">차단 시도</p>
+                            <p class="text-xl font-bold text-slate-800">0건</p>
+                            <p class="text-[10px] text-emerald-500 font-semibold">—</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center flex-shrink-0">
+                            <span class="material-symbols-outlined text-amber-500 text-xl"
+                                style="font-variation-settings:'FILL' 1">warning</span>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-semibold text-slate-400 uppercase">경고 발생</p>
+                            <p class="text-xl font-bold text-slate-800">0건</p>
+                            <p class="text-[10px] text-red-500 font-semibold">—</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Charts Row -->
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+
+                    <!-- Focus Trends Chart -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary text-lg">analytics</span>
+                                <h2 class="text-sm font-bold text-slate-800">집중도 추세</h2>
+                            </div>
+                        </div>
+                        <div class="p-5 h-64">
+                            <canvas id="focusChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- App Usage Distribution -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-emerald-500 text-lg">donut_small</span>
+                                <h2 class="text-sm font-bold text-slate-800">앱 사용 분포</h2>
+                            </div>
+                        </div>
+                        <div class="p-5 flex items-center justify-center gap-6">
+                            <div class="w-44 h-44">
+                                <canvas id="appChart"></canvas>
+                            </div>
+                            <div class="space-y-2" id="appList">
+                                <div class="flex items-center gap-2"><span
+                                        class="w-3 h-3 rounded-sm bg-primary"></span><span
+                                        class="text-xs text-slate-600 font-medium">—</span></div>
+                                <div class="flex items-center gap-2"><span
+                                        class="w-3 h-3 rounded-sm bg-emerald-500"></span><span
+                                        class="text-xs text-slate-600 font-medium">—</span></div>
+                                <div class="flex items-center gap-2"><span
+                                        class="w-3 h-3 rounded-sm bg-violet-500"></span><span
+                                        class="text-xs text-slate-600 font-medium">—</span></div>
+                                <div class="flex items-center gap-2"><span
+                                        class="w-3 h-3 rounded-sm bg-amber-400"></span><span
+                                        class="text-xs text-slate-600 font-medium">—</span></div>
+                                <div class="flex items-center gap-2"><span
+                                        class="w-3 h-3 rounded-sm bg-slate-300"></span><span
+                                        class="text-xs text-slate-600 font-medium">—</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Student Rankings -->
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-5">
+
+                    <!-- Top Students -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-amber-500 text-lg">emoji_events</span>
+                                <h2 class="text-sm font-bold text-slate-800">집중도 Top 학생</h2>
+                            </div>
+                        </div>
+                        <div id="topStudents" class="p-5 space-y-3">
+                            <div class="flex flex-col items-center justify-center py-8 text-slate-300">
+                                <span class="material-symbols-outlined text-3xl mb-2">emoji_events</span>
+                                <p class="text-xs text-slate-400">데이터가 없습니다</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI Recommendations -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-violet-500 text-lg">psychology</span>
+                                <h2 class="text-sm font-bold text-slate-800">AI 추천 조치</h2>
+                            </div>
+                        </div>
+                        <div id="aiRecommendations" class="p-5 space-y-3">
+                            <div class="flex items-start gap-3 p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                                <span class="material-symbols-outlined text-primary text-lg mt-0.5">lightbulb</span>
+                                <div>
+                                    <p class="text-xs font-semibold text-slate-800 mb-1">분석 대기 중</p>
+                                    <p class="text-[10px] text-slate-500 leading-relaxed">PC가 연결되면 AI가 자동으로 패턴을 분석합니다.
+                                    </p>
+                                    <button
+                                        class="inline-flex items-center gap-1 mt-2 text-[10px] font-semibold text-primary hover:underline"><span
+                                            class="material-symbols-outlined text-xs">check_circle</span>적용하기</button>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-3 p-3 bg-amber-50/50 rounded-xl border border-amber-100">
+                                <span class="material-symbols-outlined text-amber-500 text-lg mt-0.5">warning</span>
+                                <div>
+                                    <p class="text-xs font-semibold text-slate-800 mb-1">—</p>
+                                    <p class="text-[10px] text-slate-500 leading-relaxed">PC를 연결하면 분석 데이터가 표시됩니다.</p>
+                                    <button
+                                        class="inline-flex items-center gap-1 mt-2 text-[10px] font-semibold text-amber-600 hover:underline"><span
+                                            class="material-symbols-outlined text-xs">schedule</span>점검 예약</button>
+                                </div>
+                            </div>
+                            <div
+                                class="flex items-start gap-3 p-3 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                                <span class="material-symbols-outlined text-emerald-500 text-lg mt-0.5">school</span>
+                                <div>
+                                    <p class="text-xs font-semibold text-slate-800 mb-1">추천 대기 중</p>
+                                    <p class="text-[10px] text-slate-500 leading-relaxed">PC가 연결되면 학습 데이터 기반 추천이 제공됩니다.
+                                    </p>
+                                    <button
+                                        class="inline-flex items-center gap-1 mt-2 text-[10px] font-semibold text-emerald-600 hover:underline"><span
+                                            class="material-symbols-outlined text-xs">send</span>자료 전송</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Focus Trends Chart
+        const focusCtx = document.getElementById('focusChart')?.getContext('2d');
+        if (focusCtx) {
+            new Chart(focusCtx, {
+                type: 'line',
+                data: {
+                    labels: ['월', '화', '수', '목', '금'],
+                    datasets: [{
+                        label: '집중도',
+                        data: [0, 0, 0, 0, 0],
+                        borderColor: '#2563eb',
+                        backgroundColor: 'rgba(37,99,235,0.08)',
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#2563eb',
+                        pointRadius: 5,
+                        pointHoverRadius: 8,
+                        borderWidth: 2.5,
+                    }, {
+                        label: '지난주',
+                        data: [0, 0, 0, 0, 0],
+                        borderColor: '#e2e8f0',
+                        backgroundColor: 'transparent',
+                        borderDash: [5, 5],
+                        tension: 0.4,
+                        pointRadius: 0,
+                        borderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'top', labels: { font: { size: 11, family: 'Inter' }, usePointStyle: true, padding: 20 } },
+                    },
+                    scales: {
+                        y: { beginAtZero: false, min: 60, max: 100, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+                        x: { grid: { display: false }, ticks: { font: { size: 10 } } }
+                    }
+                }
+            });
+        }
+
+        // App Usage Chart
+        const appCtx = document.getElementById('appChart')?.getContext('2d');
+        if (appCtx) {
+            new Chart(appCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['앱1', '앱2', '앱3', '앱4', '기타'],
+                    datasets: [{
+                        data: [0, 0, 0, 0, 0],
+                        backgroundColor: ['#2563eb', '#22c55e', '#8b5cf6', '#f59e0b', '#cbd5e1'],
+                        borderWidth: 0,
+                        hoverOffset: 8,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    cutout: '65%',
+                }
+            });
+        }
+    </script>
+    <script>
+        (function () {
+            const socket = io({ transports: ['websocket', 'polling'] });
+            let currentPeriod = 'daily';
+
+            // === Load All Data ===
+            async function loadAll() {
+                await Promise.all([loadStats(), loadLogData()]);
+            }
+
+            // === Stats Cards ===
+            async function loadStats() {
+                try {
+                    const res = await fetch('/api/stats');
+                    const data = await res.json();
+                    const stats = data.stats || data || {};
+
+                    const cards = document.querySelectorAll('.stat-card');
+                    // Card 0: 평균 집중도
+                    if (cards[0]) {
+                        const val = cards[0].querySelector('.text-xl');
+                        if (val) val.textContent = stats.avg_focus != null ? `${Math.round(stats.avg_focus)}%` : (stats.online || 0) > 0 ? '—' : '0%';
+                    }
+                    // Card 1: 총 사용 시간
+                    if (cards[1]) {
+                        const val = cards[1].querySelector('.text-xl');
+                        if (val) val.textContent = stats.total_hours != null ? `${stats.total_hours}h` : '0h';
+                    }
+                    // Card 2: 차단 시도
+                    if (cards[2]) {
+                        const val = cards[2].querySelector('.text-xl');
+                        if (val) val.textContent = stats.blocked_attempts != null ? `${stats.blocked_attempts}회` : '0회';
+                    }
+                    // Card 3: 경고
+                    if (cards[3]) {
+                        const val = cards[3].querySelector('.text-xl');
+                        if (val) val.textContent = stats.warnings != null ? `${stats.warnings}건` : '0건';
+                    }
+                } catch (e) { console.error('Stats error:', e); }
+            }
+
+            // === Charts & Rankings ===
+            async function loadLogData() {
+                try {
+                    const res = await fetch('/api/logs?limit=100');
+                    const data = await res.json();
+                    const logs = data.logs || data || [];
+                    updateFocusChart(logs);
+                    updateAppChart(logs);
+                    updateRankings(logs);
+                } catch (e) { console.error('Logs error:', e); }
+            }
+
+            // === Focus Trend Chart ===
+            function updateFocusChart(logs) {
+                const canvas = document.getElementById('focusChart');
+                if (!canvas) return;
+
+                // Group logs by hour
+                const hourlyData = {};
+                logs.forEach(log => {
+                    const d = new Date(log.timestamp || log.created_at);
+                    const hour = d.getHours();
+                    if (!hourlyData[hour]) hourlyData[hour] = { count: 0, focus: 0 };
+                    hourlyData[hour].count++;
+                    if (log.cpu_usage != null) hourlyData[hour].focus += (100 - log.cpu_usage);
+                });
+
+                const hours = Array.from({ length: 12 }, (_, i) => i + 8); // 8AM to 7PM
+                const labels = hours.map(h => `${h}시`);
+                const dataPoints = hours.map(h => hourlyData[h] ? Math.round(hourlyData[h].focus / hourlyData[h].count) : 0);
+
+                if (window._focusChart) window._focusChart.destroy();
+                window._focusChart = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels,
+                        datasets: [{
+                            label: '집중도',
+                            data: dataPoints,
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#6366f1',
+                            pointRadius: 3,
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%', font: { size: 10 } }, grid: { color: '#f1f5f9' } },
+                            x: { ticks: { font: { size: 10 } }, grid: { display: false } }
+                        }
+                    }
+                });
+            }
+
+            // === App Usage Chart ===
+            function updateAppChart(logs) {
+                const canvas = document.getElementById('appChart');
+                if (!canvas) return;
+
+                // Count activity types
+                const appCounts = {};
+                logs.forEach(log => {
+                    const app = log.app_name || log.type || '기타';
+                    appCounts[app] = (appCounts[app] || 0) + 1;
+                });
+
+                const sorted = Object.entries(appCounts).sort((a, b) => b[1] - a[1]).slice(0, 5);
+                const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+
+                if (window._appChart) window._appChart.destroy();
+                window._appChart = new Chart(canvas, {
+                    type: 'doughnut',
+                    data: {
+                        labels: sorted.map(s => s[0]),
+                        datasets: [{
+                            data: sorted.map(s => s[1]),
+                            backgroundColor: colors.slice(0, sorted.length),
+                            borderWidth: 0,
+                            hoverOffset: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '65%',
+                        plugins: {
+                            legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 15, usePointStyle: true } }
+                        }
+                    }
+                });
+
+                // Update app list
+                const listContainer = document.getElementById('appList');
+                if (listContainer) {
+                    listContainer.innerHTML = sorted.map((s, i) => `
+                    <div class="flex items-center justify-between py-1.5">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full" style="background:${colors[i]}"></span>
+                            <span class="text-xs text-slate-600">${s[0]}</span>
+                        </div>
+                        <span class="text-xs font-bold text-slate-700">${Math.round(s[1] / logs.length * 100)}%</span>
+                    </div>
+                `).join('');
+                }
+            }
+
+            // === Student Rankings ===
+            function updateRankings(logs) {
+                const pcActivity = {};
+                logs.forEach(log => {
+                    const name = log.pc_name || '—';
+                    if (!pcActivity[name]) pcActivity[name] = { count: 0, focus: 0 };
+                    pcActivity[name].count++;
+                    if (log.cpu_usage != null) pcActivity[name].focus += (100 - log.cpu_usage);
+                });
+
+                const ranked = Object.entries(pcActivity)
+                    .map(([name, d]) => ({ name, count: d.count, avgFocus: d.count > 0 ? Math.round(d.focus / d.count) : 0 }))
+                    .sort((a, b) => b.avgFocus - a.avgFocus);
+
+                // Top Students
+                const topContainer = document.getElementById('topStudents');
+                if (topContainer) {
+                    const medals = ['🥇', '🥈', '🥉'];
+                    const top = ranked.slice(0, 5);
+                    topContainer.innerHTML = top.length === 0
+                        ? '<div class="text-center text-slate-300 py-4 text-xs">데이터 없음</div>'
+                        : top.map((s, i) => `
+                        <div class="flex items-center gap-3 py-2">
+                            <span class="text-lg">${medals[i] || `${i + 1}`}</span>
+                            <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white text-xs font-bold">${s.name.charAt(0)}</div>
+                            <div class="flex-1">
+                                <p class="text-xs font-semibold text-slate-700">${s.name}</p>
+                                <p class="text-[10px] text-slate-400">활동 ${s.count}건</p>
+                            </div>
+                            <span class="text-sm font-bold text-primary">${s.avgFocus}%</span>
+                        </div>
+                    `).join('');
+                }
+
+                // AI Recommendations
+                const aiContainer = document.getElementById('aiRecommendations');
+                if (aiContainer) {
+                    const lowFocus = ranked.filter(s => s.avgFocus < 50);
+                    aiContainer.innerHTML = lowFocus.length === 0
+                        ? '<div class="flex items-center gap-2 p-3 bg-emerald-50 rounded-lg"><span class="material-symbols-outlined text-emerald-500">check_circle</span><span class="text-xs text-emerald-700">모든 학생이 양호한 집중도를 보이고 있습니다</span></div>'
+                        : lowFocus.slice(0, 3).map(s => `
+                        <div class="flex items-center gap-2 p-3 bg-amber-50 rounded-lg">
+                            <span class="material-symbols-outlined text-amber-500">warning</span>
+                            <span class="text-xs text-amber-700">${s.name} — 집중도 ${s.avgFocus}% (관심 필요)</span>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            // === Period Selector ===
+            document.querySelectorAll('button').forEach(btn => {
+                const periods = { '일간': 'daily', '주간': 'weekly', '월간': 'monthly' };
+                const period = periods[btn.textContent.trim()];
+                if (period) {
+                    btn.addEventListener('click', () => {
+                        currentPeriod = period;
+                        document.querySelectorAll('button').forEach(b => {
+                            const p = periods[b.textContent.trim()];
+                            if (p) b.className = b.className.replace(/bg-primary text-white|bg-slate-100 text-slate-600/g, '').trim() + (p === period ? ' bg-primary text-white' : ' bg-slate-100 text-slate-600');
+                        });
+                        loadAll();
+                    });
+                }
+            });
+
+            // === Refresh ===
+            document.querySelectorAll('button').forEach(btn => {
+                if (btn.querySelector('.material-symbols-outlined')?.textContent === 'refresh') {
+                    btn.addEventListener('click', loadAll);
+                }
+            });
+
+            // === WebSocket ===
+            socket.on('pc-updated', () => loadAll());
+
+            // === Toast ===
+            function showToast(msg) {
+                const t = document.createElement('div');
+                t.className = 'fixed bottom-5 right-5 px-4 py-3 rounded-xl shadow-lg text-sm font-medium z-50 bg-white text-slate-800 border border-slate-200';
+                t.textContent = msg; document.body.appendChild(t);
+                setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000);
+            }
+
+            loadAll();
+            setInterval(loadAll, 30000);
+        })();
+    </script>
+</body>
+
+</html>

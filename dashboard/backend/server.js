@@ -129,11 +129,16 @@ app.use(compression({ level: 6, threshold: 512 })); // Level 6: good balance spe
 app.use(cors({ origin: config.CORS_ORIGIN }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static(path.join(__dirname, '../frontend'), {
-    maxAge: config.IS_PRODUCTION ? '1d' : '1h',
-    etag: true,
+    maxAge: 0,
+    etag: false,
     lastModified: true,
+    setHeaders: (res) => {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+    }
 }));
-app.use(express.static('public', { maxAge: '1h' }));
+app.use(express.static('public', { maxAge: 0 }));
 
 // Request timeout (Phase 20)
 app.use((req, res, next) => {
