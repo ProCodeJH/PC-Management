@@ -177,7 +177,7 @@ function Get-Text([string]$key) { return $T[$Script:Lang][$key] }
                 <GradientStop Color="#0a0f1f" Offset="0"/><GradientStop Color="#0d1428" Offset="1"/>
             </LinearGradientBrush></Border.Background>
             <StackPanel Margin="16,24,16,0">
-                <TextBlock Text="&#x26A1;" FontSize="36" HorizontalAlignment="Center" Margin="0,0,0,2"/>
+                <TextBlock Text="JH" FontSize="28" FontWeight="ExtraBold" Foreground="White" HorizontalAlignment="Center" Margin="0,0,0,2"/>
                 <TextBlock x:Name="TitleText" Text="EPM Setup" FontSize="16" FontWeight="Bold" Foreground="#4f9cf9" HorizontalAlignment="Center"/>
                 <TextBlock Text="v3.0" FontSize="10" Foreground="#475569" HorizontalAlignment="Center" Margin="0,2,0,20"/>
                 <Button x:Name="LangBtn" Content="EN" FontSize="11" Padding="12,4" HorizontalAlignment="Center" Margin="0,0,0,20" Style="{StaticResource BtnS}"/>
