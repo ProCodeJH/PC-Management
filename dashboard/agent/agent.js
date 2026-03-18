@@ -25,6 +25,28 @@ const CONFIG = {
     IP_ADDRESS: getLocalIP(),
 };
 
+// ── 차단 프로그램 목록 (런타임 상태) ─────────────────────
+const blockedPrograms = new Set(); // program_name (lowercase, no .exe required)
+let blockMonitorInterval = null;
+
+function startBlockMonitor() {
+    if (blockMonitorInterval) return;
+    blockMonitorInterval = setInterval(() => {
+        if (blockedPrograms.size === 0) return;
+        blockedPrograms.forEach(prog => {
+            exec(`tasklist /FI "IMAGENAME eq ${prog}" /NH /FO CSV`, (err, out) => {
+                if (out && out.toLowerCase().includes(prog.toLowerCase())) {
+                    exec(`taskkill /IM "${prog}" /F`, () => {});
+                }
+            });
+        });
+    }, 3000); // 3초마다 체크
+}
+
+function stopBlockMonitor() {
+    if (blockMonitorInterval) { clearInterval(blockMonitorInterval); blockMonitorInterval = null; }
+}
+
 // ── 유틸 ──────────────────────────────────────────────
 function getLocalIP() {
     const interfaces = os.networkInterfaces();
@@ -357,6 +379,31 @@ class PCAgent {
                 blockSite(domain);
             } else {
                 unblockSite(domain);
+            }
+        });
+
+        // ── 프로그램 차단/해제 명령 ──
+        this.socket.on(`block-program-${CONFIG.PC_NAME}`, (data) => {
+            const { programName, blocked } = data;
+            const name = programName.endsWith('.exe') ? programName : programName + '.exe';
+            if (blocked) {
+                blockedPrograms.add(name.toLowerCase());
+                startBlockMonitor();
+                // Kill immediately if running
+                exec(`taskkill /IM "${name}" /F`, () => {});
+                console.log(`[BLOCK] ${name} 차단됨`);
+            } else {
+                blockedPrograms.delete(name.toLowerCase());
+                if (blockedPrograms.size === 0) stopBlockMonitor();
+                console.log(`[BLOCK] ${name} 해제됨`);
+            }
+        });
+
+
+        // ── 차단 프로그램 목록 요청 ──
+        this.socket.on(`get-blocked-programs-${CONFIG.PC_NAME}`, (callback) => {
+            if (typeof callback === 'function') {
+                callback({ success: true, blockedPrograms: [...blockedPrograms] });
             }
         });
 

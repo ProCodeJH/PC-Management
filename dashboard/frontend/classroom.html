@@ -24,6 +24,7 @@
             },
         }
     </script>
+    <script src="auth-helper.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -160,7 +161,7 @@
                 // === API Fetch ===
                 async function loadPCs() {
                     try {
-                        const res = await fetch('/api/pcs');
+                        const res = await authFetch('/api/pcs');
                         const data = await res.json();
                         pcs.clear();
                         (data.pcs || data || []).forEach(pc => pcs.set(pc.pc_name || pc.name, pc));
@@ -246,7 +247,7 @@
                 // === Commands ===
                 window.sendCmd = async function (pcName, command) {
                     try {
-                        await fetch(`/api/pcs/${encodeURIComponent(pcName)}/command`, {
+                        await authFetch(`/api/pcs/${encodeURIComponent(pcName)}/command`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ command })
@@ -273,7 +274,7 @@
                             if (!msg) return;
                             pcs.forEach((pc, name) => {
                                 if (pc.status === 'online') {
-                                    fetch(`/api/pcs/${encodeURIComponent(name)}/command`, {
+                                    authFetch(`/api/pcs/${encodeURIComponent(name)}/command`, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ command: 'message', message: msg })

@@ -63,7 +63,8 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, decry
                 }
             `;
 
-            exec(`powershell.exe -Command "${script.replace(/\n/g, ' ')}"`, { timeout }, (err, stdout, stderr) => {
+            const encoded = Buffer.from(script, 'utf16le').toString('base64');
+            exec(`powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${encoded}`, { timeout }, (err, stdout, stderr) => {
                 try {
                     resolve(JSON.parse(stdout.trim()));
                 } catch {
@@ -163,7 +164,7 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, decry
     });
 
     // GET /history - 명령 기록 조회
-    router.get('/history', (req, res) => {
+    router.get('/history', authenticateToken, (req, res) => {
         const limit = parseInt(req.query.limit) || 50;
         db.all(`SELECT * FROM remote_commands ORDER BY executed_at DESC LIMIT ?`, [limit], (err, rows) => {
             if (err) return res.status(500).json({ error: err.message });
@@ -172,7 +173,7 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, decry
     });
 
     // GET /quick-commands - 빠른 명령 목록
-    router.get('/quick-commands', (req, res) => {
+    router.get('/quick-commands', authenticateToken, (req, res) => {
         const commands = Object.entries(QUICK_COMMANDS).map(([key, cmd]) => ({
             id: key, name: key, command: cmd
         }));

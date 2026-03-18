@@ -127,7 +127,7 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole }) {
     });
 
     // POST /pcs/:name/report - 시스템 보고서 수신
-    router.post('/pcs/:name/report', (req, res) => {
+    router.post('/pcs/:name/report', authenticateToken, (req, res) => {
         const pcName = req.params.name;
         const report = req.body;
         db.run(`INSERT OR REPLACE INTO pc_reports (pc_name, report_data, created_at) VALUES (?, ?, datetime('now'))`,
@@ -139,7 +139,7 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole }) {
     });
 
     // GET /pcs/:name/report - 시스템 보고서 조회
-    router.get('/pcs/:name/report', (req, res) => {
+    router.get('/pcs/:name/report', authenticateToken, (req, res) => {
         const pcName = req.params.name;
         db.get(`SELECT * FROM pc_reports WHERE pc_name = ?`, [pcName], (err, row) => {
             if (err) return res.status(500).json({ success: false, error: err.message });

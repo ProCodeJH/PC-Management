@@ -24,6 +24,7 @@
             },
         }
     </script>
+    <script src="auth-helper.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -359,7 +360,7 @@
                 // === Load PCs ===
                 async function loadPCs() {
                     try {
-                        const res = await fetch('/api/pcs');
+                        const res = await authFetch('/api/pcs');
                         const data = await res.json();
                         allPCs = data.pcs || data || [];
                         renderStudentList();
@@ -440,7 +441,7 @@
                 // === Chat History ===
                 async function loadChatHistory() {
                     try {
-                        const res = await fetch(`/api/logs?limit=20&pc_name=${encodeURIComponent(selectedPC)}`);
+                        const res = await authFetch(`/api/logs?limit=20&pc_name=${encodeURIComponent(selectedPC)}`);
                         const data = await res.json();
                         const logs = data.logs || data || [];
                         renderChat(logs);
@@ -489,7 +490,7 @@
                     if (!selectedPC || !textarea?.value.trim()) return;
                     const msg = textarea.value.trim();
                     try {
-                        await fetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, {
+                        await authFetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ command: 'message', message: msg })
@@ -553,13 +554,13 @@
                         else if (text.includes('URL')) {
                             const url = prompt('전송할 URL:');
                             if (!url) return;
-                            await fetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: 'open-url', url }) });
+                            await authFetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: 'open-url', url }) });
                             showToast('URL 전송 완료'); return;
                         }
                         if (cmd === 'message' && text.includes('Warning')) {
-                            await fetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: 'message', message: '⚠️ 경고: 수업에 집중해 주세요.' }) });
+                            await authFetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: 'message', message: '⚠️ 경고: 수업에 집중해 주세요.' }) });
                         } else {
-                            await fetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: cmd }) });
+                            await authFetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: cmd }) });
                         }
                         showToast(`${cmd} 전송 완료`);
                     });

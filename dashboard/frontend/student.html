@@ -24,6 +24,7 @@
             },
         }
     </script>
+    <script src="auth-helper.js"></script>
     <link rel="stylesheet" href="styles.css">
 </head>
 
@@ -264,7 +265,7 @@
                 // === Load PCs ===
                 async function loadPCs() {
                     try {
-                        const res = await fetch('/api/pcs');
+                        const res = await authFetch('/api/pcs');
                         const data = await res.json();
                         allPCs = data.pcs || data || [];
                         if (!selectedPC && allPCs.length > 0) {
@@ -354,7 +355,7 @@
                 // === Load Logs ===
                 async function loadLogs(pcName) {
                     try {
-                        const res = await fetch(`/api/logs?limit=20&pc_name=${encodeURIComponent(pcName)}`);
+                        const res = await authFetch(`/api/logs?limit=20&pc_name=${encodeURIComponent(pcName)}`);
                         const data = await res.json();
                         const logs = data.logs || data || [];
                         renderTimeline(logs);
@@ -410,9 +411,9 @@
                         if (cmd === 'message') {
                             const msg = prompt('메시지 입력:');
                             if (!msg) return;
-                            await fetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: cmd, message: msg }) });
+                            await authFetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: cmd, message: msg }) });
                         } else {
-                            await fetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: cmd }) });
+                            await authFetch(`/api/pcs/${encodeURIComponent(selectedPC)}/command`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ command: cmd }) });
                         }
                         showToast(`${selectedPC}: ${cmd} 전송 완료`);
                     });

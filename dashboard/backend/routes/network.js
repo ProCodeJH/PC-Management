@@ -9,7 +9,7 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, PORT 
     const router = express.Router();
 
     // GET /my-ip - 서버 IP 주소 감지
-    router.get('/my-ip', (req, res) => {
+    router.get('/my-ip', authenticateToken, (req, res) => {
         const interfaces = os.networkInterfaces();
         let localIP = '192.168.0.1';
         let subnet = '192.168.0';
@@ -28,7 +28,7 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, PORT 
     });
 
     // GET /scan - 네트워크 자동 스캔
-    router.get('/scan', (req, res) => {
+    router.get('/scan', authenticateToken, (req, res) => {
         const { subnet } = req.query;
         const baseSubnet = subnet || '192.168.0';
         const scanRange = req.query.range || '1-254';

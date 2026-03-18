@@ -18,6 +18,8 @@ class EnterpriseDashboard {
         this.liveViewLastBwUpdate = 0;
         this.currentTheme = localStorage.getItem('theme') || 'light';
         this.authToken = localStorage.getItem('authToken') || null;
+        this.authUser = this.safeParseJSON(localStorage.getItem('authUser'));
+        this.authRequest = null;
 
         // v4.0 New Features
         this.commandHistory = [];
@@ -137,6 +139,196 @@ class EnterpriseDashboard {
     }
 
     // ========================================
+    // API / Auth Helpers
+    // ========================================
+    safeParseJSON(value) {
+        if (!value) return null;
+        try {
+            return JSON.parse(value);
+        } catch {
+            return null;
+        }
+    }
+
+    unwrapPayload(payload) {
+        if (payload && payload.success === true && Object.prototype.hasOwnProperty.call(payload, 'data')) {
+            return payload.data;
+        }
+        return payload;
+    }
+
+    getCount(value) {
+        if (Array.isArray(value)) return value.length;
+        if (typeof value === 'number') return value;
+        return 0;
+    }
+
+    setAuthSession(token, user) {
+        this.authToken = token || null;
+        this.authUser = user || null;
+
+        if (this.authToken) {
+            localStorage.setItem('authToken', this.authToken);
+        } else {
+            localStorage.removeItem('authToken');
+        }
+
+        if (this.authUser) {
+            localStorage.setItem('authUser', JSON.stringify(this.authUser));
+            if (this.authUser.username) {
+                localStorage.setItem('authUsername', this.authUser.username);
+            }
+        } else {
+            localStorage.removeItem('authUser');
+        }
+    }
+
+    clearAuthSession() {
+        this.authToken = null;
+        this.authUser = null;
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('authUser');
+    }
+
+    async login(username, password) {
+        const response = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+
+        const data = await response.json();
+        if (!response.ok || !data.success || !data.token) {
+            throw new Error(data.error || '로그인 실패');
+        }
+
+        this.setAuthSession(data.token, data.user);
+        return data;
+    }
+
+    requestCredentials(message = '대시보드 관리자 로그인이 필요합니다. 대상 PC 관리자 계정과는 별도입니다.') {
+        return new Promise((resolve) => {
+            const existing = document.getElementById('authModalOverlay');
+            if (existing) existing.remove();
+
+            const savedUsername = localStorage.getItem('authUsername') || this.authUser?.username || 'admin';
+            const overlay = document.createElement('div');
+            overlay.id = 'authModalOverlay';
+            overlay.className = 'fixed inset-0 bg-slate-950/50 backdrop-blur-sm flex items-center justify-center p-4';
+            overlay.style.zIndex = '300';
+            overlay.innerHTML = `
+                <div class="w-full max-w-md rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
+                    <div class="px-6 py-5 border-b border-slate-100">
+                        <h3 class="text-base font-bold text-slate-800">대시보드 관리자 로그인</h3>
+                        <p class="mt-1 text-xs text-slate-500">${message}</p>
+                        <p class="mt-2 rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-500">원클릭 배포에 입력하는 학생 PC 관리자 계정과는 다른 로그인입니다.</p>
+                        <p class="mt-2 rounded-xl border border-amber-100 bg-amber-50 px-3 py-2 text-[11px] text-amber-700">초기 기본 계정은 <strong>admin / admin123</strong> 입니다. 이미 변경했다면 변경한 계정을 사용하세요.</p>
+                    </div>
+                    <form id="authModalForm" class="p-6 space-y-4">
+                        <label class="block">
+                            <span class="mb-1.5 block text-xs font-semibold text-slate-600">사용자명</span>
+                            <input id="authUsernameInput" type="text" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" value="${savedUsername}">
+                        </label>
+                        <label class="block">
+                            <span class="mb-1.5 block text-xs font-semibold text-slate-600">비밀번호</span>
+                            <input id="authPasswordInput" type="password" class="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" placeholder="비밀번호 입력">
+                        </label>
+                        <div id="authModalError" class="hidden rounded-xl border border-red-100 bg-red-50 px-3 py-2 text-xs text-red-600"></div>
+                        <div class="flex items-center justify-end gap-2 pt-2">
+                            <button type="button" id="authModalCancel" class="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-50">취소</button>
+                            <button type="submit" class="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-white hover:bg-primary-dark">로그인</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+
+            const cleanup = (value) => {
+                overlay.remove();
+                resolve(value);
+            };
+
+            const form = overlay.querySelector('#authModalForm');
+            const usernameInput = overlay.querySelector('#authUsernameInput');
+            const passwordInput = overlay.querySelector('#authPasswordInput');
+            const errorBox = overlay.querySelector('#authModalError');
+
+            overlay.querySelector('#authModalCancel')?.addEventListener('click', () => cleanup(null));
+            overlay.addEventListener('click', (event) => {
+                if (event.target === overlay) cleanup(null);
+            });
+
+            form?.addEventListener('submit', (event) => {
+                event.preventDefault();
+                const username = usernameInput?.value?.trim();
+                const password = passwordInput?.value || '';
+
+                if (!username || !password) {
+                    errorBox.textContent = '사용자명과 비밀번호를 입력하세요.';
+                    errorBox.classList.remove('hidden');
+                    return;
+                }
+
+                cleanup({ username, password });
+            });
+
+            document.body.appendChild(overlay);
+            setTimeout(() => passwordInput?.focus(), 0);
+        });
+    }
+
+    async promptForLogin(message) {
+        if (this.authRequest) return this.authRequest;
+
+        this.authRequest = (async () => {
+            let promptMessage = message;
+
+            while (true) {
+                const credentials = await this.requestCredentials(promptMessage);
+                if (!credentials) return false;
+
+                try {
+                    await this.login(credentials.username, credentials.password);
+                    this.showToast('로그인 성공', `${credentials.username} 계정으로 인증되었습니다`, 'success');
+                    return true;
+                } catch (error) {
+                    this.showToast('로그인 실패', error.message, 'error');
+                    promptMessage = `로그인 실패: ${error.message}`;
+                }
+            }
+        })().finally(() => {
+            this.authRequest = null;
+        });
+
+        return this.authRequest;
+    }
+
+    async authFetch(url, options = {}, retry = true) {
+        const { authMessage, ...fetchOptions } = options;
+
+        if (!this.authToken) {
+            const authenticated = await this.promptForLogin(authMessage || '관리자 기능을 사용하려면 로그인하세요.');
+            if (!authenticated) {
+                throw new Error('관리자 인증이 필요합니다');
+            }
+        }
+
+        const headers = { ...(fetchOptions.headers || {}) };
+        headers.Authorization = `Bearer ${this.authToken}`;
+
+        const response = await fetch(url, { ...fetchOptions, headers });
+        if ((response.status === 401 || response.status === 403) && retry) {
+            this.clearAuthSession();
+            const authenticated = await this.promptForLogin(authMessage || '세션이 만료되었거나 권한이 없습니다. 다시 로그인하세요.');
+            if (!authenticated) {
+                throw new Error('관리자 인증이 필요합니다');
+            }
+            return this.authFetch(url, { ...fetchOptions, authMessage }, false);
+        }
+
+        return response;
+    }
+
+    // ========================================
     // Data Loading
     // ========================================
     async loadInitialData() {
@@ -154,11 +346,11 @@ class EnterpriseDashboard {
 
     async loadPCs() {
         try {
-            const response = await fetch('/api/pcs');
+            const response = await this.authFetch('/api/pcs');
             if (!response.ok) {
                 throw new Error(`Server error: ${response.status}`);
             }
-            const pcs = await response.json();
+            const pcs = this.unwrapPayload(await response.json());
 
             this.pcs.clear();
             if (Array.isArray(pcs)) {
@@ -175,8 +367,8 @@ class EnterpriseDashboard {
 
     async loadStats() {
         try {
-            const response = await fetch('/api/stats');
-            const stats = await response.json();
+            const response = await this.authFetch('/api/stats');
+            const stats = this.unwrapPayload(await response.json());
 
             document.getElementById('totalPCs').textContent = stats.totalPCs || 0;
             document.getElementById('onlinePCs').textContent = stats.onlinePCs || 0;
@@ -188,8 +380,10 @@ class EnterpriseDashboard {
 
     async loadActivities() {
         try {
-            const response = await fetch('/api/logs?limit=20');
-            this.activities = await response.json();
+            const response = await this.authFetch('/api/logs?limit=20');
+            const payload = await response.json();
+            const activities = this.unwrapPayload(payload);
+            this.activities = Array.isArray(activities) ? activities : [];
             this.renderActivities();
         } catch (error) {
             console.error('Failed to load activities:', error);
@@ -502,7 +696,7 @@ class EnterpriseDashboard {
         const pcName = this.selectedPC.pc_name;
 
         try {
-            const response = await fetch(`/api/pcs/${pcName}/command`, {
+            const response = await this.authFetch(`/api/pcs/${pcName}/command`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -612,8 +806,8 @@ class EnterpriseDashboard {
     // ========================================
 
     async loadProcesses() {
-        if (!this.selectedPC?.ip_address) {
-            this.showToast('오류', 'PC IP 주소가 없습니다', 'error');
+        if (!this.selectedPC?.pc_name) {
+            this.showToast('오류', 'PC를 선택해주세요', 'error');
             return;
         }
 
@@ -621,7 +815,7 @@ class EnterpriseDashboard {
         processList.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">프로세스 조회 중...</p>';
 
         try {
-            const response = await fetch(`/api/pcs/${this.selectedPC.ip_address}/processes`);
+            const response = await this.authFetch(`/api/pcs/${this.selectedPC.pc_name}/processes`);
             const data = await response.json();
 
             if (data.success && data.processes?.length > 0) {
@@ -651,12 +845,12 @@ class EnterpriseDashboard {
     }
 
     async killProcess(processName, processId) {
-        if (!this.selectedPC?.ip_address) return;
+        if (!this.selectedPC?.pc_name) return;
 
         if (!confirm(`${processName} 프로세스를 종료하시겠습니까?`)) return;
 
         try {
-            const response = await fetch(`/api/pcs/${this.selectedPC.ip_address}/kill-process`, {
+            const response = await this.authFetch(`/api/pcs/${this.selectedPC.pc_name}/kill-process`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ processName, processId })
@@ -675,10 +869,10 @@ class EnterpriseDashboard {
     }
 
     async blockProgram(programName) {
-        if (!this.selectedPC?.ip_address) return;
+        if (!this.selectedPC?.pc_name) return;
 
         try {
-            const response = await fetch(`/api/pcs/${this.selectedPC.ip_address}/block-program`, {
+            const response = await this.authFetch(`/api/pcs/${this.selectedPC.pc_name}/block-program`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ programName, blocked: true })
@@ -688,7 +882,7 @@ class EnterpriseDashboard {
             if (data.success) {
                 this.showToast('성공', `${programName} 실행 차단됨`, 'success');
                 document.getElementById('blockProgramInput').value = '';
-                this.loadBlockedPrograms();
+                this.loadRemoteBlockedPrograms();
             } else {
                 this.showToast('오류', data.error, 'error');
             }
@@ -697,13 +891,13 @@ class EnterpriseDashboard {
         }
     }
 
-    async loadBlockedPrograms() {
-        if (!this.selectedPC?.ip_address) return;
+    async loadRemoteBlockedPrograms() {
+        if (!this.selectedPC?.pc_name) return;
 
         const blockedList = document.getElementById('blockedList');
 
         try {
-            const response = await fetch(`/api/pcs/${this.selectedPC.ip_address}/blocked-programs`);
+            const response = await this.authFetch(`/api/pcs/${this.selectedPC.pc_name}/blocked-programs`);
             const data = await response.json();
 
             if (data.success && data.blockedPrograms?.length > 0) {
@@ -715,7 +909,7 @@ class EnterpriseDashboard {
                 `).join('');
 
                 blockedList.querySelectorAll('.btn-unblock').forEach(btn => {
-                    btn.addEventListener('click', () => this.unblockProgram(btn.dataset.program));
+                    btn.addEventListener('click', () => this.unblockRemoteProgram(btn.dataset.program));
                 });
             } else {
                 blockedList.innerHTML = '<p class="blocked-empty">차단된 프로그램 없음</p>';
@@ -725,11 +919,11 @@ class EnterpriseDashboard {
         }
     }
 
-    async unblockProgram(programName) {
-        if (!this.selectedPC?.ip_address) return;
+    async unblockRemoteProgram(programName) {
+        if (!this.selectedPC?.pc_name) return;
 
         try {
-            const response = await fetch(`/api/pcs/${this.selectedPC.ip_address}/block-program`, {
+            const response = await this.authFetch(`/api/pcs/${this.selectedPC.pc_name}/block-program`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ programName, blocked: false })
@@ -738,7 +932,7 @@ class EnterpriseDashboard {
             const data = await response.json();
             if (data.success) {
                 this.showToast('성공', `${programName} 차단 해제됨`, 'success');
-                this.loadBlockedPrograms();
+                this.loadRemoteBlockedPrograms();
             }
         } catch (error) {
             this.showToast('오류', '차단 해제 실패', 'error');
@@ -746,16 +940,16 @@ class EnterpriseDashboard {
     }
 
     async sendFile(sourcePath, destPath) {
-        if (!this.selectedPC?.ip_address) return;
+        if (!this.selectedPC?.pc_name) return;
 
         this.showToast('전송 중', '파일 전송을 시작합니다...', 'info');
 
         try {
-            const response = await fetch('/api/pcs/send-file', {
+            const response = await this.authFetch('/api/pcs/send-file', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    targetIPs: [this.selectedPC.ip_address],
+                    targetIPs: [this.selectedPC.pc_name],
                     sourcePath,
                     destPath
                 })
@@ -1013,13 +1207,13 @@ class EnterpriseDashboard {
 
         try {
             // Get server subnet
-            const myIpRes = await fetch('/api/network/my-ip');
+            const myIpRes = await this.authFetch('/api/network/my-ip');
             const myIpData = await myIpRes.json();
             const subnet = myIpData.subnet || '192.168.0';
 
             scanStatus.textContent = `${subnet}.x 스캔 중...`;
 
-            const response = await fetch(`/api/network/scan?subnet=${subnet}&range=1-254`);
+            const response = await this.authFetch(`/api/network/scan?subnet=${subnet}&range=1-254`);
             const data = await response.json();
 
             if (data.success) {
@@ -1051,7 +1245,7 @@ class EnterpriseDashboard {
                 ${pcs.map(pc => `
                     <div class="scanned-pc-item flex items-center justify-between p-3 rounded-lg border cursor-pointer transition ${pc.winrmReady ? 'border-emerald-200 bg-emerald-50/50 hover:border-emerald-300' : 'border-amber-200 bg-amber-50/50 hover:border-amber-300'}" data-ip="${pc.ip}" data-ready="${pc.winrmReady}">
                         <span class="text-xs font-mono font-medium text-slate-700">${pc.ip}</span>
-                        <span class="text-[10px] font-semibold ${pc.winrmReady ? 'text-emerald-600' : 'text-amber-600'}">${pc.winrmReady ? '✅ 배포 가능' : '⚠️ WinRM 필요'}</span>
+                        <span class="pc-status text-[10px] font-semibold ${pc.winrmReady ? 'text-emerald-600' : 'text-amber-600'}">${pc.winrmReady ? '✅ 배포 가능' : '⚠️ WinRM 필요'}</span>
                         ${!pc.winrmReady ? `<button class="btn-setup-winrm px-2 py-1 bg-amber-100 text-amber-700 rounded text-[10px] font-semibold hover:bg-amber-200" data-ip="${pc.ip}">🔧 설정</button>` : ''}
                     </div>
                 `).join('')}
@@ -1189,7 +1383,8 @@ class EnterpriseDashboard {
         document.getElementById('stepsList').innerHTML = '<p class="loading">🚀 원클릭 자동 배포 시작...</p>';
 
         try {
-            const response = await fetch('/api/deploy/auto', {
+            const response = await this.authFetch('/api/deploy/auto', {
+                authMessage: '원클릭 자동 배포를 시작하려면 먼저 대시보드 관리자 계정으로 로그인하세요. 대상 PC 관리자 계정과는 별도입니다.',
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetIP, username, password })
@@ -1211,7 +1406,13 @@ class EnterpriseDashboard {
                 this.showToast('배포 실패', data.error, 'error');
             }
         } catch (error) {
-            document.getElementById('stepsList').innerHTML = `< p class="error" >❌ 오류: ${error.message}</p > `;
+            if (error.message.includes('관리자 인증')) {
+                document.getElementById('stepsList').innerHTML = '<p class="warning">⚠️ 대시보드 관리자 로그인 필요: 초기 기본 계정은 admin / admin123 입니다.</p>';
+                this.showToast('로그인 필요', '대시보드 관리자 계정으로 먼저 로그인하세요. 초기 기본 계정은 admin / admin123 입니다.', 'warning');
+                return;
+            }
+
+            document.getElementById('stepsList').innerHTML = `<p class="error">❌ 오류: ${error.message}</p>`;
             this.showToast('배포 실패', error.message, 'error');
         }
     }
@@ -1258,7 +1459,9 @@ class EnterpriseDashboard {
         statusEl.className = 'text-xs text-amber-500';
 
         try {
-            const response = await fetch(`/ api / deploy / check / ${ip} `);
+            const response = await this.authFetch(`/api/deploy/check/${ip}`, {
+                authMessage: '연결 확인을 하려면 먼저 대시보드 관리자 계정으로 로그인하세요. 학생 PC 관리자 계정과는 별도입니다.'
+            });
             const result = await response.json();
 
             if (result.reachable) {
@@ -1269,6 +1472,13 @@ class EnterpriseDashboard {
                 statusEl.className = 'text-xs text-red-500';
             }
         } catch (error) {
+            if (error.message.includes('관리자 인증')) {
+                statusEl.textContent = '대시보드 관리자 로그인 필요';
+                statusEl.className = 'text-xs text-amber-600';
+                this.showToast('로그인 필요', '대시보드 관리자 계정으로 먼저 로그인하세요. 초기 기본 계정은 admin / admin123 입니다.', 'warning');
+                return;
+            }
+
             statusEl.textContent = '연결 확인 실패';
             statusEl.className = 'text-xs text-red-500';
         }
@@ -1353,7 +1563,7 @@ class EnterpriseDashboard {
     openBlockModal() {
         document.getElementById('blockModalOverlay').classList.add('active');
         this.loadBlockedSites();
-        this.loadBlockedPrograms();
+        this.loadManagedBlockedPrograms();
     }
 
     closeBlockModal() {
@@ -1362,8 +1572,8 @@ class EnterpriseDashboard {
 
     async loadBlockedSites() {
         try {
-            const response = await fetch('/api/blocked-sites');
-            this.blockedSites = await response.json();
+            const response = await this.authFetch('/api/blocked-sites');
+            this.blockedSites = this.unwrapPayload(await response.json()) || [];
             this.renderBlockedSites();
         } catch (error) {
             console.error('Failed to load blocked sites:', error);
@@ -1377,11 +1587,11 @@ class EnterpriseDashboard {
             return;
         }
         container.innerHTML = this.blockedSites.map(site => `
-                < div class="blocked-item" data - id="${site.id}" >
+            <div class="blocked-item" data-id="${site.id}">
                 <span class="blocked-item-name">🌐 ${site.url}</span>
                 <button class="blocked-item-remove" onclick="dashboard.removeBlockedSite(${site.id})">×</button>
-            </div >
-                `).join('');
+            </div>
+        `).join('');
     }
 
     async addBlockedSite() {
@@ -1390,7 +1600,7 @@ class EnterpriseDashboard {
         if (!url) return;
 
         try {
-            const response = await fetch('/api/blocked-sites', {
+            const response = await this.authFetch('/api/blocked-sites', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ url })
@@ -1407,7 +1617,7 @@ class EnterpriseDashboard {
 
     async removeBlockedSite(id) {
         try {
-            await fetch(`/ api / blocked - sites / ${id} `, { method: 'DELETE' });
+            await this.authFetch(`/api/blocked-sites/${id}`, { method: 'DELETE' });
             this.loadBlockedSites();
             this.showToast('사이트 삭제', '차단 해제됨', 'info');
         } catch (error) {
@@ -1415,24 +1625,24 @@ class EnterpriseDashboard {
         }
     }
 
-    loadBlockedPrograms() {
+    loadManagedBlockedPrograms() {
         // Load from localStorage for now (can be extended to backend)
         this.blockedPrograms = JSON.parse(localStorage.getItem('blockedPrograms') || '[]');
-        this.renderBlockedPrograms();
+        this.renderManagedBlockedPrograms();
     }
 
-    renderBlockedPrograms() {
+    renderManagedBlockedPrograms() {
         const container = document.getElementById('blockedProgramsList');
         if (this.blockedPrograms.length === 0) {
             container.innerHTML = '<div class="empty-list-message">차단된 프로그램이 없습니다</div>';
             return;
         }
         container.innerHTML = this.blockedPrograms.map((prog, idx) => `
-                < div class="blocked-item" data - idx="${idx}" >
+            <div class="blocked-item" data-idx="${idx}">
                 <span class="blocked-item-name">🎮 ${prog}</span>
                 <button class="blocked-item-remove" onclick="dashboard.removeBlockedProgram(${idx})">×</button>
-            </div >
-                `).join('');
+            </div>
+        `).join('');
     }
 
     addBlockedProgram() {
@@ -1443,32 +1653,32 @@ class EnterpriseDashboard {
         this.blockedPrograms.push(program);
         localStorage.setItem('blockedPrograms', JSON.stringify(this.blockedPrograms));
         input.value = '';
-        this.renderBlockedPrograms();
+        this.renderManagedBlockedPrograms();
         this.showToast('프로그램 추가', `${program} 차단 목록에 추가됨`, 'success');
     }
 
     removeBlockedProgram(idx) {
         this.blockedPrograms.splice(idx, 1);
         localStorage.setItem('blockedPrograms', JSON.stringify(this.blockedPrograms));
-        this.renderBlockedPrograms();
+        this.renderManagedBlockedPrograms();
         this.showToast('프로그램 삭제', '차단 해제됨', 'info');
     }
 
     async applyBlockingToAllPCs() {
-        const applyTarget = document.querySelector('input[name="applyTarget"]:checked').value;
+        const applyTarget = document.querySelector('input[name="applyTarget"]:checked')?.value || 'all';
 
         this.showToast('적용 중', '모든 PC에 차단 정책 적용 중...', 'info');
 
         // Get list of online PCs
         try {
-            const response = await fetch('/api/pcs');
+            const response = await this.authFetch('/api/pcs');
             const pcs = await response.json();
 
             const onlinePCs = pcs.filter(pc => pc.status === 'online');
 
             // Send command to each PC
             for (const pc of onlinePCs) {
-                await fetch(`/ api / pcs / ${pc.pc_name}/command`, {
+                await this.authFetch(`/api/pcs/${pc.pc_name}/command`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -1502,8 +1712,10 @@ class EnterpriseDashboard {
         document.getElementById('oneClickStartBtn').disabled = false;
         document.getElementById('oneClickStartBtn').textContent = '⚡ 원클릭 설정 시작';
 
-        // Load saved credentials if any
-        this.loadSavedCredentials();
+        // Load saved credentials only after admin authentication exists.
+        if (this.authToken) {
+            this.loadSavedCredentials();
+        }
     }
 
     closeOneClickModal() {
@@ -1511,8 +1723,12 @@ class EnterpriseDashboard {
     }
 
     async loadSavedCredentials() {
+        if (!this.authToken) {
+            return;
+        }
+
         try {
-            const response = await fetch('/api/credentials/default');
+            const response = await this.authFetch('/api/credentials/default');
             const data = await response.json();
             if (data.hasDefault) {
                 document.getElementById('oneClickUsername').value = data.username;
@@ -1541,7 +1757,8 @@ class EnterpriseDashboard {
         this.addOneClickLog('🚀 원클릭 전체 설정 시작...');
 
         try {
-            const response = await fetch('/api/oneclick/full-setup', {
+            const response = await this.authFetch('/api/deploy/oneclick/full-setup', {
+                authMessage: '원클릭 배포를 시작하려면 먼저 대시보드 관리자 계정으로 로그인하세요. 학생 PC 관리자 계정과는 별도입니다.',
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password })
@@ -1558,10 +1775,15 @@ class EnterpriseDashboard {
                 this.showToast('설정 실패', data.error, 'error');
             }
         } catch (error) {
-            this.addOneClickLog(`❌ 네트워크 오류: ${error.message}`);
+            if (error.message.includes('관리자 인증')) {
+                this.addOneClickLog('⚠️ 대시보드 관리자 로그인 필요: 초기 기본 계정은 admin / admin123 입니다.');
+                this.showToast('로그인 필요', '대시보드 관리자 계정으로 먼저 로그인하세요. 초기 기본 계정은 admin / admin123 입니다.', 'warning');
+            } else {
+                this.addOneClickLog(`❌ 네트워크 오류: ${error.message}`);
+                this.showToast('오류', error.message, 'error');
+            }
             document.getElementById('oneClickStartBtn').disabled = false;
             document.getElementById('oneClickStartBtn').textContent = '⚡ 다시 시도';
-            this.showToast('오류', error.message, 'error');
         }
     }
 
@@ -1593,18 +1815,21 @@ class EnterpriseDashboard {
         document.getElementById('oneClickResultSection').style.display = 'block';
 
         const summary = data.results || data.summary || {};
+        const scannedCount = this.getCount(summary.scanned);
+        const installedCount = this.getCount(summary.installed ?? summary.agentInstalled);
+        const failedCount = this.getCount(summary.failed ?? summary.setupFailed);
         document.getElementById('oneClickResultSummary').innerHTML = `
             <div class="grid grid-cols-3 gap-4 text-center">
                 <div class="bg-slate-50 p-4 rounded-xl">
-                    <div class="text-2xl font-bold text-primary">${summary.scanned || summary.scanned?.length || 0}</div>
+                    <div class="text-2xl font-bold text-primary">${scannedCount}</div>
                     <div class="text-xs text-slate-500 mt-1">발견된 PC</div>
                 </div>
                 <div class="bg-emerald-50 p-4 rounded-xl">
-                    <div class="text-2xl font-bold text-emerald-600">${summary.installed || summary.agentInstalled?.length || 0}</div>
+                    <div class="text-2xl font-bold text-emerald-600">${installedCount}</div>
                     <div class="text-xs text-slate-500 mt-1">설치 성공</div>
                 </div>
                 <div class="bg-red-50 p-4 rounded-xl">
-                    <div class="text-2xl font-bold text-red-500">${summary.failed || summary.setupFailed?.length || 0}</div>
+                    <div class="text-2xl font-bold text-red-500">${failedCount}</div>
                     <div class="text-xs text-slate-500 mt-1">실패</div>
                 </div>
             </div>
@@ -1648,7 +1873,7 @@ class EnterpriseDashboard {
         let success = 0;
         for (const pc of onlinePCs) {
             try {
-                const res = await fetch(`/api/pcs/${pc.pc_name}/command`, {
+                const res = await this.authFetch(`/api/pcs/${pc.pc_name}/command`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ command })
@@ -1667,7 +1892,7 @@ class EnterpriseDashboard {
         const pcName = this.selectedPC.pc_name;
 
         try {
-            const res = await fetch(`/api/pcs/${pcName}/command`, {
+            const res = await this.authFetch(`/api/pcs/${pcName}/command`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ command: 'screenshot' })
@@ -1692,7 +1917,7 @@ class EnterpriseDashboard {
 
         for (const pc of onlinePCs) {
             try {
-                await fetch(`/api/pcs/${pc.pc_name}/command`, {
+                await this.authFetch(`/api/pcs/${pc.pc_name}/command`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ command: 'screenshot' })
@@ -1714,7 +1939,7 @@ class EnterpriseDashboard {
         }
 
         try {
-            const res = await fetch(`/api/pcs/${this.selectedPC.pc_name}/command`, {
+            const res = await this.authFetch(`/api/pcs/${this.selectedPC.pc_name}/command`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ command: 'message', params: { message } })
@@ -1756,7 +1981,7 @@ class EnterpriseDashboard {
         let success = 0;
         for (const pc of onlinePCs) {
             try {
-                const res = await fetch(`/api/pcs/${pc.pc_name}/command`, {
+                const res = await this.authFetch(`/api/pcs/${pc.pc_name}/command`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ command: 'message', params: { message } })

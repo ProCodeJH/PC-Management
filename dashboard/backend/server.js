@@ -62,6 +62,7 @@ const io = socketIO(server, {
 
 // WebSocket connection tracking (Phase 10)
 const wsConnections = new Map(); // ip -> count
+const pcSockets = new Map(); // pcName -> socketId
 
 io.use((socket, next) => {
     // Rate limit per IP
@@ -267,7 +268,16 @@ rawDb.serialize(() => {
     )`);
 
     rawDb.run(`INSERT OR IGNORE INTO blocked_sites (url) VALUES ('youtube.com')`);
-    rawDb.run(`INSERT OR IGNORE INTO blocked_sites (url) VALUES ('twitch.tv')`);
+    rawDb.run(`INSERT OR IGNORE INTO blocked_sites (url) VALUES ('twitch.tv')`)
+
+    rawDb.run(`CREATE TABLE IF NOT EXISTS blocked_programs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        pc_name TEXT NOT NULL,
+        program_name TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(pc_name, program_name)
+    )`);
+    rawDb.run(`CREATE INDEX IF NOT EXISTS idx_blocked_programs_pc ON blocked_programs(pc_name)`);;
 
     rawDb.run(`CREATE TABLE IF NOT EXISTS saved_credentials (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -429,13 +439,13 @@ app.get('/api/docs', (req, res) => {
                 login: { method: 'POST', path: '/api/auth/login', auth: false },
             },
             pcs: {
-                list: { method: 'GET', path: '/api/pcs', auth: false },
+                list: { method: 'GET', path: '/api/pcs', auth: true },
                 delete: { method: 'DELETE', path: '/api/pcs/:name', auth: true },
                 command: { method: 'POST', path: '/api/pcs/:name/command', auth: false },
                 status: { method: 'POST', path: '/api/pcs/:name/status', auth: false },
             },
-            logs: { method: 'GET', path: '/api/logs', auth: false },
-            stats: { method: 'GET', path: '/api/stats', auth: false },
+            logs: { method: 'GET', path: '/api/logs', auth: true },
+            stats: { method: 'GET', path: '/api/stats', auth: true },
             credentials: {
                 list: { method: 'GET', path: '/api/credentials', auth: true },
                 save: { method: 'POST', path: '/api/credentials', auth: true },
@@ -478,7 +488,7 @@ app.get('/api/docs', (req, res) => {
 // Core Inline Routes (with cache + ETag)
 // ========================================
 
-app.get('/api/pcs', cache.etagMiddleware('pcs'), (req, res) => {
+app.get('/api/pcs', authenticateToken, cache.etagMiddleware('pcs'), (req, res) => {
     const cached = cache.get('pcs');
     if (cached) {
         metrics.inc('cache_hits');
@@ -506,7 +516,7 @@ app.delete('/api/pcs/:name', authenticateToken, audit.middleware('pc.delete', 'w
     });
 });
 
-app.post('/api/pcs/:name/command', (req, res) => {
+app.post('/api/pcs/:name/command', authenticateToken, requireRole('admin'), (req, res) => {
     const { name } = req.params;
     const { command, params } = req.body;
     io.emit(`command-${name}`, { command, params });
@@ -528,7 +538,7 @@ app.post('/api/pcs/:name/status', (req, res) => {
         });
 });
 
-app.get('/api/logs', (req, res) => {
+app.get('/api/logs', authenticateToken, (req, res) => {
     const { pc_name, limit = 100, page = 1 } = req.query;
     const parsedLimit = Math.min(parseInt(limit) || 100, 1000);
     const offset = (Math.max(parseInt(page) || 1, 1) - 1) * parsedLimit;
@@ -561,7 +571,7 @@ app.get('/api/logs', (req, res) => {
     });
 });
 
-app.get('/api/stats', cache.etagMiddleware('stats'), (req, res) => {
+app.get('/api/stats', authenticateToken, cache.etagMiddleware('stats'), (req, res) => {
     const cached = cache.get('stats');
     if (cached) {
         metrics.inc('cache_hits');
@@ -593,6 +603,82 @@ app.get('/api/stats', cache.etagMiddleware('stats'), (req, res) => {
     }).catch(err => ApiResponse.serverError(res, err.message));
 });
 
+// ========================================
+// Per-PC Agent Routes (processes, block-program, send-file)
+// ========================================
+
+// GET /api/pcs/:name/processes
+app.get('/api/pcs/:name/processes', authenticateToken, (req, res) => {
+    const name = req.params.name;
+    const socketId = pcSockets.get(name);
+    if (!socketId) return res.status(404).json({ success: false, error: 'PC not connected' });
+    const pcSocket = io.sockets.sockets.get(socketId);
+    if (!pcSocket) { pcSockets.delete(name); return res.status(404).json({ success: false, error: 'Socket gone' }); }
+
+    const timer = setTimeout(() => {
+        if (!res.headersSent) res.status(504).json({ success: false, error: 'Timeout' });
+    }, 10000);
+
+    pcSocket.emit(`get-processes-${name}`, (data) => {
+        clearTimeout(timer);
+        if (res.headersSent) return;
+        res.json({ success: true, processes: data?.processes || [] });
+    });
+});
+
+// POST /api/pcs/:name/kill-process
+app.post('/api/pcs/:name/kill-process', authenticateToken, requireRole('admin'), (req, res) => {
+    const name = req.params.name;
+    const { processName } = req.body;
+    if (!processName) return res.status(400).json({ error: 'processName required' });
+    io.emit(`command-${name}`, { command: 'kill-process', params: { processName } });
+    ApiResponse.ok(res, { message: `Kill ${processName} sent to ${name}` });
+});
+
+// POST /api/pcs/:name/block-program
+app.post('/api/pcs/:name/block-program', authenticateToken, requireRole('admin'), (req, res) => {
+    const name = req.params.name;
+    const { programName, blocked } = req.body;
+    if (!programName) return res.status(400).json({ error: 'programName required' });
+    const prog = programName.toLowerCase().trim();
+    if (blocked !== false) {
+        db.run('INSERT OR IGNORE INTO blocked_programs (pc_name, program_name) VALUES (?, ?)',
+            [name, prog], (err) => {
+                if (err) return ApiResponse.serverError(res, err.message);
+                io.emit(`block-program-${name}`, { programName: prog, blocked: true });
+                ApiResponse.ok(res, { message: `${prog} blocked on ${name}` });
+            });
+    } else {
+        db.run('DELETE FROM blocked_programs WHERE pc_name = ? AND program_name = ?',
+            [name, prog], (err) => {
+                if (err) return ApiResponse.serverError(res, err.message);
+                io.emit(`block-program-${name}`, { programName: prog, blocked: false });
+                ApiResponse.ok(res, { message: `${prog} unblocked on ${name}` });
+            });
+    }
+});
+
+// GET /api/pcs/:name/blocked-programs
+app.get('/api/pcs/:name/blocked-programs', authenticateToken, (req, res) => {
+    const name = req.params.name;
+    db.all('SELECT program_name FROM blocked_programs WHERE pc_name = ? ORDER BY program_name',
+        [name], (err, rows) => {
+            if (err) return ApiResponse.serverError(res, err.message);
+            res.json({ success: true, blockedPrograms: rows.map(r => r.program_name) });
+        });
+});
+
+// POST /api/pcs/send-file — command-based file push via agent
+app.post('/api/pcs/send-file', authenticateToken, requireRole('admin'), (req, res) => {
+    const { targetIPs, sourcePath, destPath } = req.body;
+    if (!targetIPs || !sourcePath || !destPath)
+        return res.status(400).json({ error: 'targetIPs, sourcePath, destPath required' });
+    const results = targetIPs.map(function(ip) {
+        io.emit('command-' + ip, { command: 'run', params: { cmd: 'echo file-push-not-yet-impl' } });
+        return { IP: ip, Success: true, message: 'Command queued' };
+    });
+    res.json({ success: true, results: results });
+});
 
 // ========================================
 // WebSocket (Phase 10: secured)
@@ -622,6 +708,7 @@ io.on('connection', (socket) => {
 
         // Track pcName on socket for disconnect handler
         socket.pcName = pcName;
+        pcSockets.set(pcName, socket.id);
 
         db.run(`INSERT OR REPLACE INTO pc_status (pc_name, ip_address, status, last_seen)
                 VALUES (?, ?, 'online', datetime('now'))`, [pcName.substring(0, 64), ipAddress], (err) => {
@@ -650,8 +737,20 @@ io.on('connection', (socket) => {
         if (!checkRate()) return;
         const { pcName, user, activityType, details } = data;
         if (!pcName || !activityType) return;
+        const normalizedDetails = typeof details === 'object' ? JSON.stringify(details) : details;
+        const activityEntry = {
+            pc_name: pcName,
+            user,
+            activity_type: activityType,
+            details: normalizedDetails,
+            timestamp: new Date().toISOString(),
+        };
         db.run(`INSERT INTO activity_logs (pc_name, user, activity_type, details) VALUES (?, ?, ?, ?)`,
-            [pcName, user, activityType, typeof details === 'object' ? JSON.stringify(details) : details]);
+            [pcName, user, activityType, normalizedDetails], (err) => {
+                if (!err) {
+                    io.emit('new-activity', activityEntry);
+                }
+            });
         metrics.inc('ws_messages');
 
         // Supabase mirroring — map activityType to event_type
@@ -732,8 +831,14 @@ io.on('connection', (socket) => {
         metrics.set('active_connections', io.engine?.clientsCount || 0);
         logger.info(`WS disconnected: ${socket.id}`);
 
-        // Supabase mirroring — mark PC offline
         if (socket.pcName) {
+            pcSockets.delete(socket.pcName);
+            // Mark offline immediately in DB
+            db.run(`UPDATE pc_status SET status = 'offline' WHERE pc_name = ?`, [socket.pcName], () => {
+                cache.invalidate('pcs');
+                cache.invalidate('stats');
+                io.emit('pc-updated', { pcName: socket.pcName, status: 'offline' });
+            });
             mirror.onPcDisconnect(socket.pcName);
         }
     });

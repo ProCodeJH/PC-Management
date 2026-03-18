@@ -10,7 +10,7 @@ module.exports = function ({ db, io, authenticateToken }) {
     // PC Groups
     // ========================================
 
-    router.get('/groups', (req, res) => {
+    router.get('/groups', authenticateToken, (req, res) => {
         db.all(`SELECT * FROM pc_groups ORDER BY name`, (err, rows) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json(rows);
@@ -63,7 +63,7 @@ module.exports = function ({ db, io, authenticateToken }) {
     // Attendance
     // ========================================
 
-    router.post('/attendance/checkin', (req, res) => {
+    router.post('/attendance/checkin', authenticateToken, (req, res) => {
         const { pcName } = req.body;
         const today = new Date().toISOString().split('T')[0];
 
@@ -74,7 +74,7 @@ module.exports = function ({ db, io, authenticateToken }) {
             });
     });
 
-    router.get('/attendance', (req, res) => {
+    router.get('/attendance', authenticateToken, (req, res) => {
         const date = req.query.date || new Date().toISOString().split('T')[0];
         db.all(`SELECT * FROM attendance WHERE date = ?`, [date], (err, rows) => {
             if (err) return res.status(500).json({ error: err.message });
@@ -86,7 +86,7 @@ module.exports = function ({ db, io, authenticateToken }) {
     // Blocked Sites
     // ========================================
 
-    router.get('/blocked-sites', (req, res) => {
+    router.get('/blocked-sites', authenticateToken, (req, res) => {
         db.all(`SELECT * FROM blocked_sites ORDER BY url`, (err, rows) => {
             if (err) return res.status(500).json({ error: err.message });
             res.json(rows);

@@ -1,6 +1,7 @@
 // routes/deploy.js
 // Deploy and OneClick setup routes
 const express = require('express');
+const net = require('net');
 const os = require('os');
 const { isValidIP, sanitizeForPS } = require('../utils/helpers');
 
@@ -21,6 +22,34 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, encry
         return '192.168.0';
     }
 
+    function detectDashboardHost(requestHost) {
+        if (requestHost && !['localhost', '127.0.0.1', '::1'].includes(requestHost)) {
+            return requestHost;
+        }
+
+        const interfaces = os.networkInterfaces();
+        for (const name of Object.keys(interfaces)) {
+            for (const iface of interfaces[name]) {
+                if (iface.family === 'IPv4' && !iface.internal) {
+                    return iface.address;
+                }
+            }
+        }
+
+        return requestHost || 'localhost';
+    }
+
+    function execPowerShell(script, options = {}, callback) {
+        const wrappedScript = `
+            [Console]::InputEncoding = [System.Text.Encoding]::UTF8
+            [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+            $OutputEncoding = [System.Text.Encoding]::UTF8
+            ${script}
+        `;
+        const encoded = Buffer.from(wrappedScript, 'utf16le').toString('base64');
+        exec(`powershell.exe -NoProfile -ExecutionPolicy Bypass -EncodedCommand ${encoded}`, options, callback);
+    }
+
     // Helper: execute remote PS with credentials
     function remoteExec(targetIP, username, password, scriptBlock, timeout = 60000) {
         return new Promise((resolve) => {
@@ -38,7 +67,7 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, encry
                     @{Success=$false; Error=$_.Exception.Message} | ConvertTo-Json -Depth 3
                 }
             `;
-            exec(`powershell.exe -Command "${script.replace(/\n/g, ' ')}"`, { timeout, maxBuffer: 1024 * 1024 * 10 }, (err, stdout) => {
+            execPowerShell(script, { timeout, maxBuffer: 1024 * 1024 * 10 }, (err, stdout) => {
                 try { resolve(JSON.parse(stdout.trim())); }
                 catch { resolve({ Success: false, Error: err?.message || 'Parse error' }); }
             });
@@ -53,6 +82,26 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, encry
         return username;
     }
 
+    function checkTcpPort(host, port, timeout = 2000) {
+        return new Promise((resolve) => {
+            const socket = new net.Socket();
+            let settled = false;
+
+            const finalize = (result) => {
+                if (settled) return;
+                settled = true;
+                socket.destroy();
+                resolve(result);
+            };
+
+            socket.setTimeout(timeout);
+            socket.once('connect', () => finalize(true));
+            socket.once('timeout', () => finalize(false));
+            socket.once('error', () => finalize(false));
+            socket.connect(port, host);
+        });
+    }
+
     // POST /api/deploy - 원격 PC에 시스템 배포
     router.post('/', authenticateToken, requireRole('admin'), (req, res) => {
         const { targetIP, username, password } = req.body;
@@ -65,7 +114,7 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, encry
         }
 
         const scriptPath = require('path').join(__dirname, '..', '..', 'StudentPC-Setup-Ultra.ps1');
-        const dashboardUrl = `http://${req.hostname}:${PORT}`;
+        const dashboardUrl = `http://${detectDashboardHost(req.hostname)}:${PORT}`;
         const safeIP = sanitizeForPS(targetIP);
         const safeUser = sanitizeForPS(username);
         const safePass = sanitizeForPS(password);
@@ -95,15 +144,29 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, encry
     });
 
     // GET /api/deploy/check/:ip - 대상 PC 연결 확인
-    router.get('/check/:ip', authenticateToken, (req, res) => {
+    router.get('/check/:ip', authenticateToken, async (req, res) => {
         const { ip } = req.params;
         if (!isValidIP(ip)) {
             return res.status(400).json({ success: false, error: 'Invalid IP address format' });
         }
+
         const pingCmd = process.platform === 'win32' ? `ping -n 1 -w 2000 ${ip}` : `ping -c 1 -W 2 ${ip}`;
-        exec(pingCmd, (error) => {
-            res.json({ ip, reachable: !error, message: !error ? 'PC is online' : 'PC is offline or unreachable' });
+        const pingReachable = await new Promise((resolve) => {
+            exec(pingCmd, (error) => resolve(!error));
         });
+        const winrmAvailable = await checkTcpPort(ip, 5985);
+        const reachable = pingReachable || winrmAvailable;
+
+        let message = 'PC is offline or unreachable';
+        if (winrmAvailable && !pingReachable) {
+            message = 'WinRM reachable even though ICMP ping is blocked';
+        } else if (winrmAvailable) {
+            message = 'PC is online and WinRM is available';
+        } else if (pingReachable) {
+            message = 'PC is online';
+        }
+
+        res.json({ ip, reachable, pingReachable, winrmAvailable, message });
     });
 
     // POST /api/deploy/auto - 원클릭 자동 배포
@@ -125,7 +188,7 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, encry
             // Step 1: TrustedHosts
             addStep('TrustedHosts 설정', 'PROGRESS');
             await new Promise((resolve) => {
-                exec(`powershell.exe -Command "Set-Item WSMan:\\localhost\\Client\\TrustedHosts -Value '${targetIP}' -Concatenate -Force"`, { timeout: 10000 }, (err) => {
+                execPowerShell(`Set-Item WSMan:\\localhost\\Client\\TrustedHosts -Value '${targetIP}' -Concatenate -Force`, { timeout: 10000 }, (err) => {
                     addStep('TrustedHosts 설정', err ? 'WARN' : 'OK', err ? '이미 설정됨 또는 권한 필요' : '');
                     resolve();
                 });
@@ -134,7 +197,7 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, encry
             // Step 2: 연결 테스트
             addStep('연결 테스트', 'PROGRESS');
             const testResult = await new Promise((resolve) => {
-                exec(`powershell.exe -Command "Test-WsMan -ComputerName ${targetIP}"`, { timeout: 5000 }, (err) => resolve(!err));
+                execPowerShell(`Test-WsMan -ComputerName ${targetIP}`, { timeout: 5000 }, (err) => resolve(!err));
             });
             if (!testResult) {
                 addStep('연결 테스트', 'FAIL', 'WinRM 연결 실패');
@@ -156,7 +219,7 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, encry
                         Write-Output "SUCCESS:$result"
                     } catch { Write-Output "FAIL:$($_.Exception.Message)" }
                 `;
-                exec(`powershell.exe -Command "${credScript.replace(/\n/g, ' ')}"`, { timeout: 20000 }, (err, stdout) => {
+                execPowerShell(credScript, { timeout: 20000 }, (err, stdout) => {
                     if (stdout.includes('SUCCESS')) {
                         resolve({ success: true, computerName: stdout.split(':')[1]?.trim() });
                     } else {
@@ -167,9 +230,15 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, encry
 
             if (!credResult.success) {
                 let helpMessage = credResult.error;
-                if (credResult.error?.includes('Access is denied') || credResult.error?.includes('액세스가 거부')) helpMessage = '비밀번호가 틀리거나 관리자 계정이 아닙니다';
-                else if (credResult.error?.includes('user name or password is incorrect')) helpMessage = '사용자명/비밀번호 오류';
-                else if (credResult.error?.includes('WinRM')) helpMessage = 'WinRM 비활성화됨';
+                if (credResult.error?.includes('Access is denied') || credResult.error?.includes('액세스가 거부') || credResult.error?.includes('about_Remote_Troubleshooting')) {
+                    helpMessage = '원격 인증이 거부되었습니다. 대상 PC의 관리자 계정, 비밀번호, 원격 관리자 권한을 확인하세요.';
+                }
+                else if (credResult.error?.includes('user name or password is incorrect')) {
+                    helpMessage = '사용자명/비밀번호 오류';
+                }
+                else if (credResult.error?.includes('WinRM')) {
+                    helpMessage = 'WinRM 비활성화됨';
+                }
                 addStep('자격 증명 확인', 'FAIL', helpMessage);
                 return res.status(400).json({ success: false, steps, error: helpMessage });
             }
@@ -177,40 +246,39 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, encry
 
             // Step 4: 에이전트 설치
             addStep('에이전트 설치', 'PROGRESS');
-            const dashboardUrl = `http://${req.hostname}:${PORT}`;
+            const dashboardUrl = `http://${detectDashboardHost(req.hostname)}:${PORT}`;
             const agentScript = `
+                $agentPath = 'C:\ProgramData\PCAgent'
                 $dashboardUrl = '${dashboardUrl}'
-                $agentPath = 'C:\\\\ProgramData\\\\PCAgent'
                 New-Item -Path $agentPath -ItemType Directory -Force | Out-Null
-                $script = @'
+                $monitorScript = @"
+                $dashboardUrl = "${dashboardUrl}"
                 while($true) {
                     try {
-                        $cpu = (Get-WmiObject Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average
-                        $mem = (Get-WmiObject Win32_OperatingSystem)
-                        $memUsed = [math]::Round((($mem.TotalVisibleMemorySize - $mem.FreePhysicalMemory) / $mem.TotalVisibleMemorySize) * 100, 1)
-                        $body = @{ pcName = $env:COMPUTERNAME; ipAddress = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike '*Loopback*' } | Select-Object -First 1).IPAddress; cpuUsage = $cpu; memoryUsage = $memUsed } | ConvertTo-Json
-                        Invoke-RestMethod -Uri "$dashboardUrl/api/pcs/$env:COMPUTERNAME/status" -Method POST -Body $body -ContentType 'application/json' -ErrorAction SilentlyContinue
-                    } catch {}
+                        $cpu = (Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average
+                        $mem = (Get-CimInstance Win32_OperatingSystem | ForEach-Object { [math]::Round((1 - $_.FreePhysicalMemory/$_.TotalVisibleMemorySize)*100, 1) })
+                        $ip = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike "*Loopback*" } | Select-Object -First 1).IPAddress
+                        $body = @{ pcName = $env:COMPUTERNAME; ipAddress = $ip; cpuUsage = $cpu; memoryUsage = $mem } | ConvertTo-Json
+                        Invoke-RestMethod -Uri "$dashboardUrl/api/pcs/$env:COMPUTERNAME/status" -Method POST -Body $body -ContentType "application/json" -TimeoutSec 5 | Out-Null
+                    } catch { }
                     Start-Sleep -Seconds 30
                 }
-'@
-                $script = $script.Replace('$dashboardUrl', '${dashboardUrl}')
-                Set-Content -Path "$agentPath\\\\Agent.ps1" -Value $script -Force
-                $action = New-ScheduledTaskAction -Execute 'PowerShell.exe' -Argument "-ExecutionPolicy Bypass -WindowStyle Hidden -File $agentPath\\\\Agent.ps1"
-                $trigger = New-ScheduledTaskTrigger -AtStartup
-                $principal = New-ScheduledTaskPrincipal -UserId 'SYSTEM' -RunLevel Highest
-                Register-ScheduledTask -TaskName 'PCManagementAgent' -Action $action -Trigger $trigger -Principal $principal -Force | Out-Null
-                Start-ScheduledTask -TaskName 'PCManagementAgent' -ErrorAction SilentlyContinue
-                Write-Output 'AGENT_INSTALLED'
-            `;
+"@
+                $monitorScript | Out-File -FilePath "$agentPath\Monitor.ps1" -Encoding UTF8 -Force
+                $startupPath = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\PCAgent.bat"
+                "Start-Process powershell.exe -ArgumentList '-WindowStyle Hidden -ExecutionPolicy Bypass -File C:\ProgramData\PCAgent\Monitor.ps1' -WindowStyle Hidden" | Out-File -FilePath $startupPath -Encoding ASCII -Force
+                Start-Process powershell.exe -ArgumentList '-WindowStyle Hidden -ExecutionPolicy Bypass -File C:\ProgramData\PCAgent\Monitor.ps1' -WindowStyle Hidden
+                Write-Output "AGENT_INSTALLED:$env:COMPUTERNAME"
+            `
+
 
             const installResult = await new Promise((resolve) => {
                 const installScript = `
-                    $secPass = ConvertTo-SecureString '${password}' -AsPlainText -Force
-                    $cred = New-Object System.Management.Automation.PSCredential('${username}', $secPass)
+                    $secPass = ConvertTo-SecureString '${escapedPassword}' -AsPlainText -Force
+                    $cred = New-Object System.Management.Automation.PSCredential('${formattedUsername}', $secPass)
                     Invoke-Command -ComputerName ${targetIP} -Credential $cred -ScriptBlock { ${agentScript.replace(/'/g, "''")} }
                 `;
-                exec(`powershell.exe -Command "${installScript.replace(/\n/g, ' ')}"`, { timeout: 60000, maxBuffer: 1024 * 1024 * 10 }, (err, stdout) => {
+                execPowerShell(installScript, { timeout: 60000, maxBuffer: 1024 * 1024 * 10 }, (err, stdout) => {
                     resolve(stdout.includes('AGENT_INSTALLED'));
                 });
             });
@@ -238,7 +306,7 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, encry
 
     // POST /api/oneclick/full-setup - 원클릭으로 모든 것을 순차 처리
     router.post('/oneclick/full-setup', authenticateToken, requireRole('admin'), async (req, res) => {
-        const dashboardUrl = `http://${req.hostname}:${PORT}`;
+        const dashboardUrl = `http://${detectDashboardHost(req.hostname)}:${PORT}`;
         const { username, password } = req.body;
 
         let defaultCred = null;
@@ -282,7 +350,8 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, encry
                     const pingResult = await new Promise((resolve) => {
                         exec(`ping -n 1 -w 100 ${ip}`, { timeout: 500 }, (err) => resolve(!err));
                     });
-                    if (pingResult) results.scanned.push({ ip, online: true });
+                    const winrmReady = await checkTcpPort(ip, 5985, 250);
+                    if (pingResult || winrmReady) results.scanned.push({ ip, online: true, winrmReady });
                 } catch { }
                 if (i % 10 === 0) {
                     io.emit('oneclick-progress', { step: 1, message: `🔍 스캔 중... ${subnet}.${i}`, found: results.scanned.length });
@@ -302,7 +371,7 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, encry
                 $agentPath = 'C:\\\\ProgramData\\\\PCAgent'
                 $dashboardUrl = '${dashboardUrl}'
                 New-Item -Path $agentPath -ItemType Directory -Force | Out-Null
-                $monitorScript = @'
+                $monitorScript = @"
                 $dashboardUrl = "${dashboardUrl}"
                 while($true) {
                     try {
@@ -314,7 +383,7 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, encry
                     } catch { }
                     Start-Sleep -Seconds 30
                 }
-'@
+"@
                 $monitorScript | Out-File -FilePath "$agentPath\\\\Monitor.ps1" -Encoding UTF8 -Force
                 $startScript = @"
                 Start-Process powershell.exe -ArgumentList '-WindowStyle Hidden -ExecutionPolicy Bypass -File C:\\\\ProgramData\\\\PCAgent\\\\Monitor.ps1' -WindowStyle Hidden
