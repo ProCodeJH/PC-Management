@@ -203,36 +203,24 @@ function Build-TeacherStage {
 function Build-StudentStage {
     Write-Status "Copying student payload"
 
-    $studentFiles = @(
-        "README.md",
-        "Student-Setup.bat",
-        "StudentPC-Setup-Ultra.ps1"
-    )
-
-    foreach ($file in $studentFiles) {
-        Copy-RequiredFile -Source (Join-Path $PSScriptRoot $file) -Destination (Join-Path $StudentStage $file)
+    # Use pre-built agent bundle (node.exe + agent.js + node_modules)
+    $bundleZip = Join-Path $PSScriptRoot "dashboard\backend\deploy-bundle\agent-bundle.zip"
+    if (-not (Test-Path $bundleZip)) {
+        Write-Status "Agent bundle not found. Building..." "Yellow"
+        $nodeCmd = (Get-Command node -ErrorAction Stop).Source
+        & $nodeCmd (Join-Path $PSScriptRoot "dashboard\backend\scripts\bundle-agent.js")
     }
 
-    # Include PC agent
-    Write-Status "Bundling PC agent"
-    Invoke-Robocopy `
-        (Join-Path $PSScriptRoot "dashboard\agent") `
-        (Join-Path $StudentStage "agent") `
-        @("/XD", "node_modules")
-
-    # Include Install-Agent.ps1
-    Copy-RequiredFile `
-        -Source (Join-Path $PSScriptRoot "installer\Install-Agent.ps1") `
-        -Destination (Join-Path $StudentStage "Install-Agent.ps1")
-
-    # Bundle local Node runtime for student PC (same as teacher)
-    $nodeCommand = Get-Command node -ErrorAction SilentlyContinue
-    if ($nodeCommand) {
-        Write-Status "Bundling Node.js runtime for student"
-        $runtimeDir = Join-Path $StudentStage "runtime"
-        New-Item -Path $runtimeDir -ItemType Directory -Force | Out-Null
-        Copy-Item -Path $nodeCommand.Source -Destination (Join-Path $runtimeDir "node.exe") -Force
+    if (-not (Test-Path $bundleZip)) {
+        throw "Failed to create agent bundle"
     }
+
+    # Extract bundle into student stage (contains node.exe + agent.js + node_modules)
+    Write-Status "Extracting agent bundle (includes portable Node.js)"
+    Expand-Archive -Path $bundleZip -DestinationPath $StudentStage -Force
+
+    $bundleSizeMB = [math]::Round((Get-Item $bundleZip).Length / 1MB, 1)
+    Write-Status "Agent bundle: ${bundleSizeMB}MB (node.exe + agent + modules)" "Green"
 }
 
 function Build-IExpressWrapper {
@@ -267,9 +255,18 @@ Build-StudentStage
 Normalize-PowerShellEncoding -RootPath $TeacherStage
 Normalize-PowerShellEncoding -RootPath $StudentStage
 
-Write-Status "Creating zip archives"
-Compress-Archive -Path (Join-Path $TeacherStage "*") -DestinationPath $TeacherZip -Force
-Compress-Archive -Path (Join-Path $StudentStage "*") -DestinationPath $StudentZip -Force
+Write-Status "Creating zip archives (using .NET ZipFile for large payloads)"
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+
+foreach ($pair in @(
+    @{ Stage = $TeacherStage; Zip = $TeacherZip },
+    @{ Stage = $StudentStage; Zip = $StudentZip }
+)) {
+    if (Test-Path $pair.Zip) { Remove-Item $pair.Zip -Force }
+    [System.IO.Compression.ZipFile]::CreateFromDirectory($pair.Stage, $pair.Zip, [System.IO.Compression.CompressionLevel]::Optimal, $false)
+    $sizeMB = [math]::Round((Get-Item $pair.Zip).Length / 1MB, 1)
+    Write-Status "$($pair.Zip | Split-Path -Leaf): ${sizeMB}MB" "Green"
+}
 
 if (-not $SkipExe) {
     Write-Status "Preparing IExpress wrapper payloads"
