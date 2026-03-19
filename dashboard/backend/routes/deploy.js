@@ -1,9 +1,14 @@
 // routes/deploy.js
-// Deploy and OneClick setup routes
+// Deploy and OneClick setup routes — deploys full Node.js agent bundle to student PCs
 const express = require('express');
 const net = require('net');
 const os = require('os');
+const fs = require('fs');
+const path = require('path');
 const { isValidIP, sanitizeForPS } = require('../utils/helpers');
+
+// Agent bundle (created by: node scripts/bundle-agent.js)
+const BUNDLE_ZIP = path.join(__dirname, '..', 'deploy-bundle', 'agent-bundle.zip');
 
 module.exports = function ({ db, io, exec, authenticateToken, requireRole, encryptPassword, decryptPassword, PORT }) {
     const router = express.Router();
@@ -244,46 +249,96 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, encry
             }
             addStep('자격 증명 확인', 'OK', `연결됨: ${credResult.computerName}`);
 
-            // Step 4: 에이전트 설치
-            addStep('에이전트 설치', 'PROGRESS');
+            // Step 4: Node.js 에이전트 번들 배포
+            addStep('에이전트 번들 전송', 'PROGRESS');
             const dashboardUrl = `http://${detectDashboardHost(req.hostname)}:${PORT}`;
-            const agentScript = `
-                $agentPath = 'C:\ProgramData\PCAgent'
-                $dashboardUrl = '${dashboardUrl}'
-                New-Item -Path $agentPath -ItemType Directory -Force | Out-Null
-                $monitorScript = @"
-                $dashboardUrl = "${dashboardUrl}"
-                while($true) {
-                    try {
-                        $cpu = (Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average
-                        $mem = (Get-CimInstance Win32_OperatingSystem | ForEach-Object { [math]::Round((1 - $_.FreePhysicalMemory/$_.TotalVisibleMemorySize)*100, 1) })
-                        $ip = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike "*Loopback*" } | Select-Object -First 1).IPAddress
-                        $body = @{ pcName = $env:COMPUTERNAME; ipAddress = $ip; cpuUsage = $cpu; memoryUsage = $mem } | ConvertTo-Json
-                        Invoke-RestMethod -Uri "$dashboardUrl/api/pcs/$env:COMPUTERNAME/status" -Method POST -Body $body -ContentType "application/json" -TimeoutSec 5 | Out-Null
-                    } catch { }
-                    Start-Sleep -Seconds 30
-                }
-"@
-                $monitorScript | Out-File -FilePath "$agentPath\Monitor.ps1" -Encoding UTF8 -Force
-                $startupPath = "$env:APPDATA\Microsoft\Windows\Start Menu\Programs\Startup\PCAgent.bat"
-                "Start-Process powershell.exe -ArgumentList '-WindowStyle Hidden -ExecutionPolicy Bypass -File C:\ProgramData\PCAgent\Monitor.ps1' -WindowStyle Hidden" | Out-File -FilePath $startupPath -Encoding ASCII -Force
-                Start-Process powershell.exe -ArgumentList '-WindowStyle Hidden -ExecutionPolicy Bypass -File C:\ProgramData\PCAgent\Monitor.ps1' -WindowStyle Hidden
-                Write-Output "AGENT_INSTALLED:$env:COMPUTERNAME"
-            `
 
+            if (!fs.existsSync(BUNDLE_ZIP)) {
+                addStep('에이전트 번들 전송', 'FAIL', 'agent-bundle.zip 없음. node scripts/bundle-agent.js 실행 필요');
+                return res.status(500).json({ success: false, steps, error: 'Agent bundle not found' });
+            }
 
-            const installResult = await new Promise((resolve) => {
-                const installScript = `
+            // Copy zip to remote PC via PSSession, extract, install service
+            const bundleZipWin = BUNDLE_ZIP.replace(/\//g, '\\');
+            const deployScript = `
+                $ErrorActionPreference = 'Continue'
+                try {
                     $secPass = ConvertTo-SecureString '${escapedPassword}' -AsPlainText -Force
                     $cred = New-Object System.Management.Automation.PSCredential('${formattedUsername}', $secPass)
-                    Invoke-Command -ComputerName ${targetIP} -Credential $cred -ScriptBlock { ${agentScript.replace(/'/g, "''")} }
-                `;
-                execPowerShell(installScript, { timeout: 60000, maxBuffer: 1024 * 1024 * 10 }, (err, stdout) => {
-                    resolve(stdout.includes('AGENT_INSTALLED'));
+                    $session = New-PSSession -ComputerName ${targetIP} -Credential $cred -ErrorAction Stop
+
+                    # Create agent directory on remote
+                    Invoke-Command -Session $session -ScriptBlock {
+                        $agentPath = 'C:\\ProgramData\\PCAgent'
+                        if (Test-Path $agentPath) {
+                            # Stop existing agent
+                            Get-Process -Name node -ErrorAction SilentlyContinue |
+                                Where-Object { $_.CommandLine -like '*agent.js*' } |
+                                Stop-Process -Force -ErrorAction SilentlyContinue
+                            schtasks /delete /tn 'PCAgent' /f 2>$null
+                        }
+                        New-Item -Path $agentPath -ItemType Directory -Force | Out-Null
+                    }
+
+                    # Copy bundle zip to remote
+                    Copy-Item -Path '${bundleZipWin}' -Destination 'C:\\ProgramData\\PCAgent\\agent-bundle.zip' -ToSession $session -Force
+
+                    # Extract and install on remote
+                    Invoke-Command -Session $session -ScriptBlock {
+                        param($serverUrl)
+                        $agentPath = 'C:\\ProgramData\\PCAgent'
+                        $zipPath = Join-Path $agentPath 'agent-bundle.zip'
+
+                        # Extract (overwrite)
+                        Expand-Archive -Path $zipPath -DestinationPath $agentPath -Force
+                        Remove-Item $zipPath -Force
+
+                        # Save server URL
+                        "SERVER_URL=$serverUrl" | Out-File -FilePath (Join-Path $agentPath '.env') -Encoding UTF8 -Force
+
+                        # Register scheduled task for auto-start
+                        schtasks /delete /tn 'PCAgent' /f 2>$null
+                        $taskCmd = "cmd /c cd /d $agentPath ^& set SERVER_URL=$serverUrl ^& node.exe agent.js"
+                        schtasks /create /tn 'PCAgent' /tr $taskCmd /sc onlogon /rl highest /f 2>$null
+
+                        # Start agent now
+                        Start-Process -FilePath (Join-Path $agentPath 'node.exe') -ArgumentList (Join-Path $agentPath 'agent.js') -WorkingDirectory $agentPath -WindowStyle Hidden
+                        Start-Sleep -Seconds 2
+
+                        # Verify
+                        $running = Get-Process -Name node -ErrorAction SilentlyContinue | Where-Object { $_.Path -like '*PCAgent*' }
+                        if ($running) {
+                            Write-Output "AGENT_INSTALLED:$env:COMPUTERNAME"
+                        } else {
+                            Write-Output "AGENT_STARTED_NO_VERIFY:$env:COMPUTERNAME"
+                        }
+                    } -ArgumentList '${dashboardUrl}'
+
+                    Remove-PSSession $session
+                } catch {
+                    Write-Output "DEPLOY_ERROR:$($_.Exception.Message)"
+                }
+            `;
+
+            const installResult = await new Promise((resolve) => {
+                execPowerShell(deployScript, { timeout: 120000, maxBuffer: 1024 * 1024 * 10 }, (err, stdout) => {
+                    const output = (stdout || '').trim();
+                    if (output.includes('AGENT_INSTALLED')) {
+                        resolve({ ok: true, verified: true, name: output.split(':')[1] });
+                    } else if (output.includes('AGENT_STARTED_NO_VERIFY')) {
+                        resolve({ ok: true, verified: false, name: output.split(':')[1] });
+                    } else {
+                        const errorMsg = output.includes('DEPLOY_ERROR:') ? output.split('DEPLOY_ERROR:')[1] : (err?.message || 'Unknown');
+                        resolve({ ok: false, error: errorMsg });
+                    }
                 });
             });
 
-            addStep('에이전트 설치', installResult ? 'OK' : 'WARN', installResult ? '' : '설치 확인 필요');
+            if (installResult.ok) {
+                addStep('에이전트 번들 전송', 'OK', `Node.js 에이전트 설치됨${installResult.verified ? ' (확인)' : ''}: ${installResult.name || targetIP}`);
+            } else {
+                addStep('에이전트 번들 전송', 'WARN', installResult.error);
+            }
 
             // Step 5: DB에 PC 등록
             addStep('PC 등록', 'PROGRESS');
@@ -363,55 +418,79 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, encry
                 return res.json({ success: false, error: '발견된 PC가 없습니다', results });
             }
 
-            // Step 2: 에이전트 설치
+            // Step 2: Node.js 에이전트 번들 배포
             results.currentStep = 2;
-            io.emit('oneclick-progress', { step: 2, total: 4, message: '🚀 에이전트 설치 시작...', results });
+            io.emit('oneclick-progress', { step: 2, total: 4, message: '🚀 Node.js 에이전트 배포 시작...', results });
 
-            const agentScript = `
-                $agentPath = 'C:\\\\ProgramData\\\\PCAgent'
-                $dashboardUrl = '${dashboardUrl}'
-                New-Item -Path $agentPath -ItemType Directory -Force | Out-Null
-                $monitorScript = @"
-                $dashboardUrl = "${dashboardUrl}"
-                while($true) {
-                    try {
-                        $cpu = (Get-CimInstance Win32_Processor | Measure-Object -Property LoadPercentage -Average).Average
-                        $mem = (Get-CimInstance Win32_OperatingSystem | ForEach-Object { [math]::Round((1 - $_.FreePhysicalMemory/$_.TotalVisibleMemorySize)*100, 1) })
-                        $ip = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike "*Loopback*" } | Select-Object -First 1).IPAddress
-                        $body = @{ pcName = $env:COMPUTERNAME; ipAddress = $ip; cpuUsage = $cpu; memoryUsage = $mem } | ConvertTo-Json
-                        Invoke-RestMethod -Uri "$dashboardUrl/api/pcs/$env:COMPUTERNAME/status" -Method POST -Body $body -ContentType "application/json" -TimeoutSec 5 | Out-Null
-                    } catch { }
-                    Start-Sleep -Seconds 30
-                }
-"@
-                $monitorScript | Out-File -FilePath "$agentPath\\\\Monitor.ps1" -Encoding UTF8 -Force
-                $startScript = @"
-                Start-Process powershell.exe -ArgumentList '-WindowStyle Hidden -ExecutionPolicy Bypass -File C:\\\\ProgramData\\\\PCAgent\\\\Monitor.ps1' -WindowStyle Hidden
-"@
-                $startScript | Out-File -FilePath "$agentPath\\\\Start.bat" -Encoding ASCII -Force
-                $startupPath = "$env:APPDATA\\\\Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Startup\\\\PCAgent.bat"
-                Copy-Item "$agentPath\\\\Start.bat" $startupPath -Force
-                Start-Process powershell.exe -ArgumentList '-WindowStyle Hidden -ExecutionPolicy Bypass -File C:\\\\ProgramData\\\\PCAgent\\\\Monitor.ps1' -WindowStyle Hidden
-                Write-Output "AGENT_INSTALLED:$env:COMPUTERNAME"
-            `;
+            if (!fs.existsSync(BUNDLE_ZIP)) {
+                io.emit('oneclick-error', { error: 'agent-bundle.zip not found' });
+                return res.status(500).json({ success: false, error: 'Agent bundle not found. Run: node scripts/bundle-agent.js', results });
+            }
+
+            const bundleZipWin = BUNDLE_ZIP.replace(/\//g, '\\');
 
             for (let i = 0; i < results.scanned.length; i++) {
                 const pc = results.scanned[i];
-                io.emit('oneclick-progress', { step: 2, message: `🚀 [${i + 1}/${results.scanned.length}] ${pc.ip} 설정 중...`, current: pc.ip });
+                io.emit('oneclick-progress', { step: 2, message: `🚀 [${i + 1}/${results.scanned.length}] ${pc.ip} 배포 중...`, current: pc.ip });
 
                 try {
                     const fmtUser = formatUsername(defaultCred.username, pc.ip);
                     const escapedPass = defaultCred.password.replace(/'/g, "''").replace(/\$/g, '`$');
 
-                    const installResult = await remoteExec(pc.ip, fmtUser, defaultCred.password, agentScript.replace(/'/g, "''").replace(/\$/g, '`$'), 120000);
+                    // Deploy full Node.js agent via PSSession + Copy-Item
+                    const deployScript = `
+                        $ErrorActionPreference = 'Continue'
+                        try {
+                            $secPass = ConvertTo-SecureString '${escapedPass}' -AsPlainText -Force
+                            $cred = New-Object System.Management.Automation.PSCredential('${fmtUser}', $secPass)
+                            $session = New-PSSession -ComputerName ${pc.ip} -Credential $cred -ErrorAction Stop
 
-                    if (installResult.Success && installResult.Output?.includes('AGENT_INSTALLED')) {
+                            Invoke-Command -Session $session -ScriptBlock {
+                                $agentPath = 'C:\\ProgramData\\PCAgent'
+                                Get-Process -Name node -ErrorAction SilentlyContinue |
+                                    Where-Object { $_.Path -like '*PCAgent*' } |
+                                    Stop-Process -Force -ErrorAction SilentlyContinue
+                                schtasks /delete /tn 'PCAgent' /f 2>$null
+                                New-Item -Path $agentPath -ItemType Directory -Force | Out-Null
+                            }
+
+                            Copy-Item -Path '${bundleZipWin}' -Destination 'C:\\ProgramData\\PCAgent\\agent-bundle.zip' -ToSession $session -Force
+
+                            Invoke-Command -Session $session -ScriptBlock {
+                                param($serverUrl)
+                                $agentPath = 'C:\\ProgramData\\PCAgent'
+                                Expand-Archive -Path "$agentPath\\agent-bundle.zip" -DestinationPath $agentPath -Force
+                                Remove-Item "$agentPath\\agent-bundle.zip" -Force
+                                "SERVER_URL=$serverUrl" | Out-File "$agentPath\\.env" -Encoding UTF8 -Force
+                                $taskCmd = "cmd /c cd /d $agentPath ^& set SERVER_URL=$serverUrl ^& node.exe agent.js"
+                                schtasks /create /tn 'PCAgent' /tr $taskCmd /sc onlogon /rl highest /f 2>$null
+                                Start-Process -FilePath "$agentPath\\node.exe" -ArgumentList "$agentPath\\agent.js" -WorkingDirectory $agentPath -WindowStyle Hidden
+                                Start-Sleep -Seconds 2
+                                $running = Get-Process -Name node -ErrorAction SilentlyContinue | Where-Object { $_.Path -like '*PCAgent*' }
+                                if ($running) { Write-Output "AGENT_INSTALLED:$env:COMPUTERNAME" }
+                                else { Write-Output "AGENT_STARTED_NO_VERIFY:$env:COMPUTERNAME" }
+                            } -ArgumentList '${dashboardUrl}'
+
+                            Remove-PSSession $session
+                        } catch {
+                            Write-Output "DEPLOY_ERROR:$($_.Exception.Message)"
+                        }
+                    `;
+
+                    const output = await new Promise((resolve) => {
+                        execPowerShell(deployScript, { timeout: 120000, maxBuffer: 1024 * 1024 * 10 }, (err, stdout) => {
+                            resolve((stdout || '').trim());
+                        });
+                    });
+
+                    if (output.includes('AGENT_INSTALLED') || output.includes('AGENT_STARTED_NO_VERIFY')) {
                         results.agentInstalled.push(pc.ip);
                         results.setupSuccess.push(pc.ip);
-                        io.emit('oneclick-progress', { step: 2, message: `✅ ${pc.ip} 설치 완료`, success: true });
+                        io.emit('oneclick-progress', { step: 2, message: `✅ ${pc.ip} Node.js 에이전트 설치 완료`, success: true });
                     } else {
-                        results.setupFailed.push({ ip: pc.ip, error: installResult.Error || 'Unknown' });
-                        io.emit('oneclick-progress', { step: 2, message: `❌ ${pc.ip} 실패: ${installResult.Error?.substring(0, 50)}`, success: false });
+                        const errMsg = output.includes('DEPLOY_ERROR:') ? output.split('DEPLOY_ERROR:')[1].substring(0, 80) : 'Unknown';
+                        results.setupFailed.push({ ip: pc.ip, error: errMsg });
+                        io.emit('oneclick-progress', { step: 2, message: `❌ ${pc.ip} 실패: ${errMsg}`, success: false });
                     }
                 } catch (error) {
                     results.setupFailed.push({ ip: pc.ip, error: error.message });
@@ -449,6 +528,37 @@ module.exports = function ({ db, io, exec, authenticateToken, requireRole, encry
                 if (err) return res.status(500).json({ error: err.message });
                 res.json({ success: true, message: '자격 증명이 저장되었습니다' });
             });
+    });
+
+    // GET /api/deploy/bundle-status — check if agent bundle exists
+    router.get('/bundle-status', authenticateToken, (req, res) => {
+        const exists = fs.existsSync(BUNDLE_ZIP);
+        let size = 0;
+        let modified = null;
+        if (exists) {
+            const stat = fs.statSync(BUNDLE_ZIP);
+            size = stat.size;
+            modified = stat.mtime.toISOString();
+        }
+        res.json({
+            success: true,
+            bundleReady: exists,
+            sizeMB: exists ? (size / 1024 / 1024).toFixed(1) : 0,
+            modified,
+            path: BUNDLE_ZIP,
+        });
+    });
+
+    // POST /api/deploy/rebuild-bundle — regenerate agent bundle
+    router.post('/rebuild-bundle', authenticateToken, requireRole('admin'), (req, res) => {
+        try {
+            const { bundle } = require('../scripts/bundle-agent');
+            const zipPath = bundle();
+            const stat = fs.statSync(zipPath);
+            res.json({ success: true, sizeMB: (stat.size / 1024 / 1024).toFixed(1) });
+        } catch (err) {
+            res.status(500).json({ success: false, error: err.message });
+        }
     });
 
     return router;

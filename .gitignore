@@ -9,6 +9,9 @@ installer/dist/
 *.db-wal
 *.db.bak
 
+# Deploy bundle (generated, ~33MB)
+dashboard/backend/deploy-bundle/
+
 # Screenshots
 dashboard/backend/screenshots/
 
