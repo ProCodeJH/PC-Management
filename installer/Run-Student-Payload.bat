@@ -1,12 +1,19 @@
 @echo off
-chcp 65001 >nul
-title PC Management - Student Agent Setup
-echo.
-echo ╔══════════════════════════════════════════╗
-echo ║  PC Management - 학생용 에이전트 설치     ║
-echo ╚══════════════════════════════════════════╝
-echo.
+:: Copy payload to temp before IExpress cleans up
+set WORKDIR=%TEMP%\PCAgent-Setup
+if exist "%WORKDIR%" rmdir /s /q "%WORKDIR%"
+mkdir "%WORKDIR%"
+copy /y "%~dp0Student-Payload.zip" "%WORKDIR%\" >nul
+copy /y "%~dp0Install-Student-Payload.ps1" "%WORKDIR%\" >nul
 
-:: Extract and install agent
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Install-Student-Payload.ps1"
-pause
+:: Write launcher in temp (avoids nested quote issues)
+> "%WORKDIR%\go.bat" echo @echo off
+>> "%WORKDIR%\go.bat" echo title PC Agent Setup
+>> "%WORKDIR%\go.bat" echo powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%WORKDIR%\Install-Student-Payload.ps1"
+>> "%WORKDIR%\go.bat" echo pause
+
+:: Run in new interactive window
+start "Setup" /wait "%WORKDIR%\go.bat"
+
+:: Cleanup
+rmdir /s /q "%WORKDIR%" 2>nul

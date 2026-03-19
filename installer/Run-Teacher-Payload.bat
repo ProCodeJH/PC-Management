@@ -1,12 +1,19 @@
 @echo off
-chcp 65001 >nul
-title PC Management - Teacher Setup
-echo.
-echo ╔══════════════════════════════════════════╗
-echo ║  PC Management - 교사용 설치 시작        ║
-echo ╚══════════════════════════════════════════╝
-echo.
+:: Copy payload to temp before IExpress cleans up
+set WORKDIR=%TEMP%\Teacher-Setup
+if exist "%WORKDIR%" rmdir /s /q "%WORKDIR%"
+mkdir "%WORKDIR%"
+copy /y "%~dp0Teacher-Payload.zip" "%WORKDIR%\" >nul
+copy /y "%~dp0Install-Teacher-Payload.ps1" "%WORKDIR%\" >nul
 
-:: Extract payload
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Install-Teacher-Payload.ps1"
-pause
+:: Write launcher in temp (avoids nested quote issues)
+> "%WORKDIR%\go.bat" echo @echo off
+>> "%WORKDIR%\go.bat" echo title Teacher Dashboard Setup
+>> "%WORKDIR%\go.bat" echo powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%WORKDIR%\Install-Teacher-Payload.ps1"
+>> "%WORKDIR%\go.bat" echo pause
+
+:: Run in new interactive window
+start "Setup" /wait "%WORKDIR%\go.bat"
+
+:: Cleanup
+rmdir /s /q "%WORKDIR%" 2>nul

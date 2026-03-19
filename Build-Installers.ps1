@@ -15,6 +15,10 @@ if (-not $ReleaseRoot) {
     $ReleaseRoot = Join-Path (Split-Path -Parent $MyInvocation.MyCommand.Path) "release"
 }
 
+# IExpress requires absolute paths — resolve now
+$OutputRoot = [System.IO.Path]::GetFullPath($OutputRoot)
+$ReleaseRoot = [System.IO.Path]::GetFullPath($ReleaseRoot)
+
 $TeacherStage = Join-Path $OutputRoot "Teacher-Setup"
 $StudentStage = Join-Path $OutputRoot "Student-Setup"
 $IExpressTemp = Join-Path $OutputRoot "_iexpress"

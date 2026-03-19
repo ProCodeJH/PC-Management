@@ -2,25 +2,19 @@
 .SYNOPSIS
     교사용 PC Management 서버 설치 + 실행
 .DESCRIPTION
-    Teacher-Payload.zip을 C:\Enterprise-PC-Management에 설치하고
-    서버를 시작한 후 브라우저에서 대시보드를 연다
+    같은 폴더의 dashboard/ + runtime/ 파일들을
+    C:\Enterprise-PC-Management에 복사하고 서버 시작
 #>
 
 $ErrorActionPreference = "Continue"
 $InstallPath = "C:\Enterprise-PC-Management"
-$PayloadZip = Join-Path $PSScriptRoot "Teacher-Payload.zip"
 $Port = 3001
 
 function Write-Status($msg, $color = "Cyan") {
     Write-Host "  [Teacher] $msg" -ForegroundColor $color
 }
 
-# 1. Extract payload
-if (-not (Test-Path $PayloadZip)) {
-    Write-Host "  [ERROR] Teacher-Payload.zip not found" -ForegroundColor Red
-    exit 1
-}
-
+# 1. Copy files to install path
 Write-Status "Installing to $InstallPath..."
 if (Test-Path $InstallPath) {
     Write-Status "Stopping existing server..." "Yellow"
@@ -29,8 +23,8 @@ if (Test-Path $InstallPath) {
 }
 
 New-Item -Path $InstallPath -ItemType Directory -Force | Out-Null
-Expand-Archive -Path $PayloadZip -DestinationPath $InstallPath -Force
-Write-Status "Files extracted" "Green"
+Copy-Item -Path "$PSScriptRoot\*" -Destination $InstallPath -Recurse -Force -Exclude "Install-Teacher-Payload.ps1","INSTALL.bat"
+Write-Status "Files copied" "Green"
 
 # 2. Find node.exe
 $NodePath = $null
@@ -100,14 +94,14 @@ Start-Process "http://localhost:$Port"
 $localIP = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike "127.*" } | Select-Object -First 1).IPAddress
 
 Write-Host ""
-Write-Host "  ╔══════════════════════════════════════════════════╗" -ForegroundColor Green
-Write-Host "  ║  Teacher Setup Complete!                         ║" -ForegroundColor Green
-Write-Host "  ╠══════════════════════════════════════════════════╣" -ForegroundColor Green
-Write-Host "  ║  Dashboard: http://localhost:$Port                ║" -ForegroundColor White
-Write-Host "  ║  Network:   http://${localIP}:$Port" -ForegroundColor Yellow
-Write-Host "  ║  Login:     admin / admin123                     ║" -ForegroundColor White
-Write-Host "  ║                                                  ║" -ForegroundColor Green
-Write-Host "  ║  Student PC agent server URL:                    ║" -ForegroundColor White
-Write-Host "  ║  http://${localIP}:$Port" -ForegroundColor Cyan
-Write-Host "  ╚══════════════════════════════════════════════════╝" -ForegroundColor Green
+Write-Host "  ========================================" -ForegroundColor Green
+Write-Host "   Teacher Setup Complete!" -ForegroundColor Green
+Write-Host "  ========================================" -ForegroundColor Green
+Write-Host "   Dashboard: http://localhost:$Port" -ForegroundColor White
+Write-Host "   Network:   http://${localIP}:$Port" -ForegroundColor Yellow
+Write-Host "   Login:     admin / admin123" -ForegroundColor White
+Write-Host "" -ForegroundColor Green
+Write-Host "   Student PC agent server URL:" -ForegroundColor White
+Write-Host "   http://${localIP}:$Port" -ForegroundColor Cyan
+Write-Host "  ========================================" -ForegroundColor Green
 Write-Host ""
