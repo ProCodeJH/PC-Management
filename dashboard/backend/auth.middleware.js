@@ -27,7 +27,13 @@ if (!JWT_SECRET || JWT_SECRET === 'CHANGE-ME-TO-A-RANDOM-SECRET-KEY') {
     module.exports._sessionSecret = crypto.randomBytes(64).toString('hex');
 }
 
-const getSecret = () => JWT_SECRET || module.exports._sessionSecret || 'fallback-dev-only';
+const getSecret = () => {
+    const secret = JWT_SECRET || module.exports._sessionSecret;
+    if (!secret) {
+        throw new Error('JWT_SECRET is not configured. Run: node setup-env.js');
+    }
+    return secret;
+};
 
 /**
  * Generate JWT Token
@@ -119,5 +125,6 @@ module.exports = {
     generateToken,
     authenticateToken,
     optionalAuth,
-    requireRole
+    requireRole,
+    getSecret
 };

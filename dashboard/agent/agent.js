@@ -204,8 +204,9 @@ function executeCommand(command, params = {}) {
             const cmd = params.cmd;
             if (!cmd) return { success: false, message: '명령어 없음' };
             log(`커스텀 명령 실행: ${cmd}`, 'cmd');
-            exec(cmd, { timeout: 30000 }, (err, stdout) => {
+            exec(cmd, { timeout: 30000, maxBuffer: 1024 * 1024 }, (err, stdout) => {
                 if (err) log(`명령 실행 오류: ${err.message}`, 'error');
+                else if (stdout) log(`명령 결과: ${stdout.substring(0, 200)}`);
             });
             return { success: true, message: `실행: ${cmd}` };
 

@@ -42,7 +42,7 @@ const rateLimit = require('express-rate-limit');
 const helmet = require('helmet');
 
 // Auth Middleware
-const { generateToken, authenticateToken, optionalAuth, requireRole } = require('./auth.middleware');
+const { generateToken, authenticateToken, optionalAuth, requireRole, getSecret } = require('./auth.middleware');
 
 const app = express();
 const server = http.createServer(app);
@@ -74,12 +74,12 @@ io.use((socket, next) => {
     }
     wsConnections.set(ip, count + 1);
 
-    // Optional JWT auth for WS
+    // Optional JWT auth for WS — uses same secret as REST auth
     const token = socket.handshake.auth?.token || socket.handshake.query?.token;
     if (token) {
         try {
             const jwt = require('jsonwebtoken');
-            socket.user = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret');
+            socket.user = jwt.verify(token, getSecret());
         } catch (e) {
             logger.debug(`WS auth failed for ${ip}: ${e.message}`);
         }
@@ -523,7 +523,7 @@ app.post('/api/pcs/:name/command', authenticateToken, requireRole('admin'), (req
     ApiResponse.ok(res, { message: `Command sent to ${name}` });
 });
 
-app.post('/api/pcs/:name/status', (req, res) => {
+app.post('/api/pcs/:name/status', optionalAuth, (req, res) => {
     const { name } = req.params;
     const { pcName, ipAddress, cpuUsage, memoryUsage } = req.body;
     const actualPcName = pcName || name;

@@ -1,4 +1,29 @@
 node_modules/
 .env
 *.log
-installer/dist/  
+installer/dist/
+
+# Database files (may contain real data)
+*.db
+*.db-shm
+*.db-wal
+*.db.bak
+
+# Screenshots
+dashboard/backend/screenshots/
+
+# Logs
+dashboard/backend/logs/
+
+# OS files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Phantom frontend package.json (declares React but code is Vanilla JS)
+# Do NOT run npm install in dashboard/frontend/ — backend serves it via express.static
+dashboard/frontend/node_modules/

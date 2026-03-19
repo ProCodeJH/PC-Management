@@ -21,11 +21,13 @@ function isValidHostnameOrIP(value) {
 }
 
 /**
- * Strip dangerous PowerShell metacharacters to prevent injection
+ * Strip dangerous PowerShell metacharacters to prevent injection.
+ * Removes: semicolons, backticks, pipes, ampersands, dollar signs,
+ * parentheses, braces, brackets, single/double quotes, and angle brackets.
  */
 function sanitizeForPS(str) {
     if (!str) return '';
-    return str.replace(/[;`|&$(){}\[\]]/g, '');
+    return str.replace(/[;`|&$(){}\[\]'"<>#]/g, '');
 }
 
 module.exports = { isValidIP, isValidHostnameOrIP, sanitizeForPS };

@@ -48,15 +48,18 @@ module.exports = function ({ db, authenticateToken }) {
         });
     });
 
-    // GET /api/credentials/default - 기본 자격 증명
+    // GET /api/credentials/default - 기본 자격 증명 (admin only, password masked)
     router.get('/default', authenticateToken, (req, res) => {
+        if (!req.user || req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, error: 'Admin access required' });
+        }
         db.get(`SELECT * FROM saved_credentials WHERE is_default = 1`, (err, row) => {
             if (err) return res.status(500).json({ error: err.message });
             if (!row) return res.json({ hasDefault: false });
             res.json({
                 hasDefault: true,
                 username: row.username,
-                password: decryptPassword(row.password_encrypted)
+                hasPassword: true
             });
         });
     });
