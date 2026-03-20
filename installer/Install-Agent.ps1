@@ -30,7 +30,7 @@ $NodePath = $null
     }
 }
 if (-not $NodePath) {
-    $NodePath = (Get-Command node -ErrorAction SilentlyContinue)?.Source
+    $cmd = Get-Command node -ErrorAction SilentlyContinue; if ($cmd) { $NodePath = $cmd.Source }
 }
 if (-not $NodePath) {
     Write-Status "Node.js not found — using PowerShell fallback agent" "Yellow"

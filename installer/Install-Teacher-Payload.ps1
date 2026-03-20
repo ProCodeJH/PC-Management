@@ -33,7 +33,7 @@ if (Test-Path $runtimeNode) {
     $NodePath = $runtimeNode
     Write-Status "Using bundled Node.js runtime"
 } else {
-    $NodePath = (Get-Command node -ErrorAction SilentlyContinue)?.Source
+    $cmd = Get-Command node -ErrorAction SilentlyContinue; if ($cmd) { $NodePath = $cmd.Source }
 }
 
 if (-not $NodePath) {

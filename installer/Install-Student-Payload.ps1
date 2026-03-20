@@ -69,8 +69,8 @@ if ($ServerUrl -notmatch ":\d+$") {
 
 Write-Status "Server URL: $ServerUrl"
 
-# 6. Save .env
-"SERVER_URL=$ServerUrl" | Out-File -FilePath (Join-Path $AgentPath ".env") -Encoding UTF8 -Force
+# 6. Save .env (ASCII, no BOM — dotenv requires clean file)
+[System.IO.File]::WriteAllText((Join-Path $AgentPath ".env"), "SERVER_URL=$ServerUrl`n", [System.Text.Encoding]::ASCII)
 
 # 7. npm install if node_modules missing
 if (-not (Test-Path (Join-Path $AgentPath "node_modules"))) {
