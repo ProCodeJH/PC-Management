@@ -5,6 +5,16 @@
 
 **Server v23.0.0** · **Agent v3.21 (self-healing)** · **Frontend: Vercel × Parsec dark**
 
+## 📚 문서
+
+| 문서 | 용도 |
+|---|---|
+| [docs/SETUP.md](docs/SETUP.md) | 관리자 PC + 서버 셋업 (npm install → 첫 실행) |
+| [docs/STUDENT-DEPLOY.md](docs/STUDENT-DEPLOY.md) | 학생 PC USB 배포 단계별 가이드 |
+| [docs/USAGE.md](docs/USAGE.md) | 일상 사용 매뉴얼 (원격 뷰어, 파일 전송, 차단, CCTV) |
+| [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | 자주 겪는 문제 11가지 해결법 |
+| [docs/CHANGELOG.md](docs/CHANGELOG.md) | 버전 기록 (v24 / v23 / Agent v3.21) |
+
 ---
 
 ## Quick Start
