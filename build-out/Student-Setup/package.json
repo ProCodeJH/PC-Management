@@ -1,0 +1,15 @@
+{
+    "name": "pc-agent",
+    "version": "3.20.0",
+    "description": "Student PC Agent v3.20 — H.264 + DXGI + multi-monitor + clipboard sync",
+    "main": "agent.js",
+    "scripts": {
+        "start": "node agent.js",
+        "dev": "node agent.js --verbose"
+    },
+    "dependencies": {
+        "socket.io-client": "^4.7.2",
+        "screenshot-desktop": "^1.15.0",
+        "systeminformation": "^5.21.0"
+    }
+}

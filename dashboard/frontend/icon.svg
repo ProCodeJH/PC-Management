@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="80" fill="#18181b"/>
+  <text x="256" y="295" font-family="-apple-system, Segoe UI, sans-serif" font-size="180" font-weight="900"
+        text-anchor="middle" fill="#fff" letter-spacing="8">JHS</text>
+  <text x="256" y="370" font-family="-apple-system, Segoe UI, sans-serif" font-size="36" font-weight="600"
+        text-anchor="middle" fill="#fbbf24" letter-spacing="4">PC MANAGER</text>
+</svg>

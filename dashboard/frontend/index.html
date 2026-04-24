@@ -1,0 +1,1584 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0d0d12" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="JHS">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" type="image/svg+xml" href="/icon.svg">
+    <link rel="apple-touch-icon" href="/icon.svg">
+    <title>JHS PC Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        /* ═══════════════════════════════════════════════════════════════════
+         * JHS PC Manager — 2026 SaaS-Grade Design System
+         * Inspired by Linear, Vercel, Stripe, Raycast
+         * OKLCH color space · 8pt grid · variable font weights · motion restraint
+         * ═══════════════════════════════════════════════════════════════════ */
+
+        :root {
+            /* Surfaces — paper white → elevated */
+            --surface-0: oklch(0.99 0 0);
+            --surface-1: oklch(1 0 0);
+            --surface-2: oklch(0.975 0 0);
+            --surface-3: oklch(0.945 0 0);
+            --surface-overlay: oklch(1 0 0 / 0.85);
+
+            /* Borders — precise 1px hairlines */
+            --border-subtle: oklch(0.935 0 0);
+            --border-default: oklch(0.89 0 0);
+            --border-strong: oklch(0.80 0 0);
+
+            /* Text — 4-tier hierarchy */
+            --text-primary: oklch(0.15 0 0);
+            --text-secondary: oklch(0.42 0 0);
+            --text-tertiary: oklch(0.58 0 0);
+            --text-disabled: oklch(0.72 0 0);
+
+            /* Accent — singular blue (Linear-style) */
+            --accent: oklch(0.55 0.20 264);
+            --accent-hover: oklch(0.48 0.20 264);
+            --accent-subtle: oklch(0.96 0.03 264);
+            --accent-ring: oklch(0.55 0.20 264 / 0.25);
+
+            /* Semantic */
+            --success: oklch(0.62 0.17 145);
+            --success-bg: oklch(0.96 0.04 145);
+            --warning: oklch(0.72 0.17 70);
+            --warning-bg: oklch(0.97 0.05 70);
+            --danger: oklch(0.58 0.22 25);
+            --danger-bg: oklch(0.96 0.04 25);
+
+            /* Motion */
+            --ease: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-emphasized: cubic-bezier(0.32, 0.72, 0, 1);
+            --dur-fast: 120ms;
+            --dur-normal: 180ms;
+            --dur-slow: 280ms;
+
+            /* Shadows — elevation through light not darkness */
+            --shadow-xs: 0 1px 1px oklch(0 0 0 / 0.03), 0 0 0 1px var(--border-subtle);
+            --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.05), 0 1px 3px oklch(0 0 0 / 0.04);
+            --shadow-md: 0 4px 6px -1px oklch(0 0 0 / 0.06), 0 2px 4px -2px oklch(0 0 0 / 0.04);
+            --shadow-lg: 0 10px 24px -6px oklch(0 0 0 / 0.10), 0 4px 8px -4px oklch(0 0 0 / 0.06);
+            --shadow-xl: 0 24px 48px -12px oklch(0 0 0 / 0.18);
+
+            /* Typography */
+            --font-sans: 'Pretendard Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+            --font-feature: "cv02", "cv03", "cv04", "cv11", "ss01";
+        }
+
+        body.dark {
+            --surface-0: oklch(0.115 0.005 264);
+            --surface-1: oklch(0.155 0.005 264);
+            --surface-2: oklch(0.185 0.005 264);
+            --surface-3: oklch(0.215 0.005 264);
+            --surface-overlay: oklch(0.15 0.005 264 / 0.85);
+
+            --border-subtle: oklch(0.22 0.005 264);
+            --border-default: oklch(0.27 0.005 264);
+            --border-strong: oklch(0.36 0.005 264);
+
+            --text-primary: oklch(0.97 0 0);
+            --text-secondary: oklch(0.72 0 0);
+            --text-tertiary: oklch(0.54 0 0);
+            --text-disabled: oklch(0.38 0 0);
+
+            --accent: oklch(0.68 0.18 264);
+            --accent-hover: oklch(0.74 0.18 264);
+            --accent-subtle: oklch(0.22 0.07 264);
+
+            --success-bg: oklch(0.22 0.06 145);
+            --warning-bg: oklch(0.24 0.06 70);
+            --danger-bg: oklch(0.22 0.08 25);
+
+            --shadow-xs: 0 1px 1px oklch(0 0 0 / 0.3), 0 0 0 1px var(--border-subtle);
+            --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.4);
+            --shadow-md: 0 4px 8px -2px oklch(0 0 0 / 0.4);
+            --shadow-lg: 0 12px 28px -8px oklch(0 0 0 / 0.5);
+            --shadow-xl: 0 28px 64px -16px oklch(0 0 0 / 0.6);
+        }
+
+        /* Reset + base */
+        * { font-feature-settings: var(--font-feature); }
+        body {
+            font-family: var(--font-sans);
+            font-feature-settings: var(--font-feature);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: var(--surface-0);
+            color: var(--text-primary);
+            letter-spacing: -0.011em;
+            transition: background-color var(--dur-normal) var(--ease), color var(--dur-normal) var(--ease);
+        }
+
+        /* Monospace contexts — IPs, versions, data */
+        code, pre, kbd, samp, .font-mono,
+        [class*="font-mono"] { font-family: var(--font-mono); font-feature-settings: "zero", "ss01"; }
+
+        /* Numeric tabular alignment for all metrics */
+        .tabular, .num { font-variant-numeric: tabular-nums; }
+
+        /* ── Tailwind palette overrides — dark + light unified via tokens ── */
+        body .bg-white { background: var(--surface-1) !important; color: var(--text-primary) !important; }
+        body .bg-gray-50 { background: var(--surface-0) !important; }
+        body .bg-gray-100 { background: var(--surface-2) !important; color: var(--text-primary) !important; }
+        body .bg-gray-200 { background: var(--surface-3) !important; }
+        body .bg-zinc-900 { background: var(--surface-1) !important; color: var(--text-primary) !important; }
+        body .bg-zinc-800 { background: var(--surface-2) !important; }
+        body .bg-zinc-700 { background: var(--surface-3) !important; }
+        body .bg-black { background: var(--surface-0) !important; }
+        body.dark .bg-white { background: var(--surface-1) !important; }
+        body.dark .bg-zinc-900 { background: var(--surface-0) !important; }
+
+        body .text-gray-800, body .text-gray-700, body .text-gray-600 { color: var(--text-primary) !important; }
+        body .text-gray-500 { color: var(--text-secondary) !important; }
+        body .text-gray-400 { color: var(--text-tertiary) !important; }
+        body .text-gray-300 { color: var(--text-disabled) !important; }
+        body.dark .text-white { color: var(--text-primary) !important; }
+        body .text-zinc-500 { color: var(--text-tertiary) !important; }
+        body .text-zinc-400 { color: var(--text-secondary) !important; }
+        body .text-zinc-600 { color: var(--text-disabled) !important; }
+
+        body .border, body [class*="border-"] { border-color: var(--border-default) !important; }
+        body .border-gray-100, body .border-gray-200, body .border-zinc-700, body .border-zinc-800 { border-color: var(--border-subtle) !important; }
+        body .border-b, body .border-t, body .border-r, body .border-l { border-color: var(--border-subtle) !important; }
+
+        /* Inputs */
+        input, select, textarea, button {
+            font-family: inherit;
+            font-feature-settings: inherit;
+        }
+        input:not([type="checkbox"]):not([type="radio"]), select, textarea {
+            background: var(--surface-1) !important;
+            color: var(--text-primary) !important;
+            border: 1px solid var(--border-default) !important;
+            border-radius: 6px;
+            transition: border-color var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease);
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 3px var(--accent-ring);
+        }
+
+        /* ── Sidebar — Linear-style refined dark nav ── */
+        #sidebar {
+            background: var(--surface-0) !important;
+            border-right: 1px solid var(--border-subtle);
+            color: var(--text-primary) !important;
+        }
+        body.dark #sidebar {
+            background: oklch(0.09 0.005 264) !important;
+        }
+        #sidebar h1 {
+            font-family: var(--font-sans);
+            font-weight: 700;
+            font-variation-settings: "wght" 720;
+            letter-spacing: -0.02em;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        #sidebar nav button {
+            border-radius: 6px;
+            margin: 1px 8px;
+            padding: 7px 12px !important;
+            font-weight: 500;
+            font-size: 13px;
+            letter-spacing: -0.01em;
+            color: var(--text-secondary) !important;
+            transition: background-color var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease);
+            position: relative;
+        }
+        #sidebar nav button:hover {
+            background: var(--surface-2) !important;
+            color: var(--text-primary) !important;
+        }
+        .sidebar-btn.active {
+            background: var(--accent-subtle) !important;
+            color: var(--accent) !important;
+        }
+        .sidebar-btn.active::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 16px;
+            background: var(--accent);
+            border-radius: 0 3px 3px 0;
+        }
+        #sidebar nav p {
+            font-size: 10px !important;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-tertiary) !important;
+            padding: 16px 20px 6px !important;
+        }
+        #sidebar .border-b, #sidebar .border-t { border-color: var(--border-subtle) !important; }
+
+        /* ── Header — compact, status-dense ── */
+        header {
+            background: var(--surface-1) !important;
+            border-bottom: 1px solid var(--border-subtle);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        /* ── Buttons — refined pill hierarchy ── */
+        button {
+            transition: all var(--dur-fast) var(--ease);
+        }
+        .bg-blue-500, .bg-blue-600 { background: var(--accent) !important; }
+        .bg-blue-500:hover, .bg-blue-600:hover { background: var(--accent-hover) !important; }
+        .bg-red-500, .bg-red-600 { background: var(--danger) !important; }
+        .bg-green-500, .bg-green-600 { background: var(--success) !important; }
+        .bg-orange-500, .bg-orange-600, .bg-amber-500 { background: var(--warning) !important; color: oklch(0.2 0.05 70) !important; }
+
+        /* Tailwind rounded overrides — 2026 softer radii */
+        .rounded, .rounded-md { border-radius: 6px !important; }
+        .rounded-lg { border-radius: 8px !important; }
+        .rounded-xl { border-radius: 10px !important; }
+        .rounded-2xl { border-radius: 14px !important; }
+
+        /* ── PC Card — the hero component ── */
+        .pc-card {
+            background: var(--surface-1);
+            border: 1px solid var(--border-subtle);
+            border-radius: 10px;
+            padding: 14px 16px;
+            cursor: grab;
+            user-select: none;
+            transition: border-color var(--dur-fast) var(--ease),
+                        background-color var(--dur-fast) var(--ease),
+                        transform var(--dur-fast) var(--ease),
+                        box-shadow var(--dur-normal) var(--ease);
+            position: relative;
+            overflow: hidden;
+        }
+        .pc-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at top right, var(--accent-subtle), transparent 70%);
+            opacity: 0;
+            transition: opacity var(--dur-normal) var(--ease);
+            pointer-events: none;
+        }
+        .pc-card:hover {
+            border-color: var(--border-strong);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+        .pc-card:hover::before { opacity: 0.6; }
+        .pc-card:active { cursor: grabbing; transform: translateY(0); }
+        .pc-card.dragging { opacity: 0.4; box-shadow: var(--shadow-xl); z-index: 100; }
+        .pc-card.selected {
+            outline: 2px solid var(--accent) !important;
+            outline-offset: 2px;
+            border-color: var(--accent) !important;
+        }
+
+        /* Status dot — precision LED */
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 9999px;
+            position: relative;
+            flex-shrink: 0;
+        }
+        .status-online {
+            background: var(--success);
+            box-shadow: 0 0 0 3px color-mix(in oklch, var(--success), transparent 80%);
+        }
+        .status-online::after {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 9999px;
+            border: 1px solid var(--success);
+            opacity: 0.3;
+            animation: pulse 2.4s var(--ease) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0; transform: scale(0.9); }
+            50% { opacity: 0.4; transform: scale(1.15); }
+        }
+        .status-offline {
+            background: var(--text-disabled);
+            opacity: 0.6;
+        }
+
+        /* Progress bars — hair-thin, smooth */
+        .bar {
+            height: 4px;
+            border-radius: 999px;
+            background: var(--surface-3);
+            overflow: hidden;
+            position: relative;
+        }
+        .bar-fill {
+            height: 100%;
+            border-radius: 999px;
+            transition: width var(--dur-slow) var(--ease-emphasized),
+                        background-color var(--dur-normal) var(--ease);
+        }
+        .bar-cpu { background: var(--accent); }
+        .bar-mem { background: linear-gradient(90deg, var(--warning), var(--danger)); }
+
+        /* ── Canvas/zones — subtle, clean ── */
+        #pc-canvas {
+            position: relative;
+            min-height: calc(100vh - 80px);
+            overflow: auto;
+            background: var(--surface-0);
+        }
+        #zone-red, #zone-blue { opacity: 0.5; }
+        body.dark #zone-red, body.dark #zone-blue { opacity: 0.3; }
+        .zone-label {
+            position: absolute;
+            top: 16px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.18em;
+            opacity: 0.35;
+            pointer-events: none;
+            text-transform: uppercase;
+        }
+
+        /* Drag over target */
+        .drag-over {
+            border: 1px dashed var(--accent) !important;
+            background: var(--accent-subtle) !important;
+        }
+
+        /* ── Modal — glass elevation ── */
+        #live-modal, .fixed.inset-0 {
+            background: color-mix(in oklch, var(--surface-0), transparent 30%) !important;
+            backdrop-filter: blur(12px) saturate(140%);
+            -webkit-backdrop-filter: blur(12px) saturate(140%);
+        }
+        #live-container, #activity-feed-panel {
+            background: var(--surface-1) !important;
+            border: 1px solid var(--border-default);
+            box-shadow: var(--shadow-xl);
+        }
+        #live-container:fullscreen {
+            max-width: 100vw;
+            max-height: 100vh;
+            border-radius: 0;
+            background: oklch(0.05 0 0);
+            border: 0;
+        }
+        #live-container:fullscreen .flex-1 { min-height: 0; }
+        #live-container:fullscreen #live-canvas {
+            max-width: 100vw;
+            max-height: calc(100vh - 40px);
+            object-fit: contain;
+        }
+
+        /* ── Activity feed — Linear-inspired density ── */
+        #activity-feed-panel { border-radius: 12px; }
+        #activity-feed-list > div { transition: background-color var(--dur-fast) var(--ease); }
+        #activity-feed-list > div:hover { background: var(--surface-2); }
+
+        /* ── Animations ── */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn var(--dur-normal) var(--ease); }
+
+        /* ── Sidebar collapsed ── */
+        #sidebar.collapsed { width: 56px !important; }
+        #sidebar.collapsed .sidebar-label { display: none !important; }
+        #sidebar.collapsed nav button { padding: 8px !important; justify-content: center; margin: 1px 4px; }
+        #sidebar.collapsed #all-cmd-menu { display: none !important; }
+        #sidebar-resize { background: transparent; transition: background var(--dur-fast) var(--ease); }
+        #sidebar-resize:hover { background: var(--accent); opacity: 0.4; }
+
+        /* ── Stats sidebar block — mono numerals, high contrast ── */
+        #sidebar .text-xs.space-y-1 > div { padding: 2px 0; }
+        #stat-total, #stat-online, #stat-offline, #header-status {
+            font-family: var(--font-mono);
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        /* ── Header FPS/size badges ── */
+        #live-fps, #live-size {
+            font-family: var(--font-mono);
+            font-variant-numeric: tabular-nums;
+            background: var(--surface-3) !important;
+            color: var(--text-secondary) !important;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        /* ── Scrollbars — minimalist ── */
+        *::-webkit-scrollbar { width: 10px; height: 10px; }
+        *::-webkit-scrollbar-track { background: transparent; }
+        *::-webkit-scrollbar-thumb {
+            background: var(--border-strong);
+            border-radius: 999px;
+            border: 3px solid var(--surface-0);
+        }
+        *::-webkit-scrollbar-thumb:hover { background: var(--text-tertiary); }
+
+        /* ── Selection ── */
+        ::selection { background: color-mix(in oklch, var(--accent), transparent 70%); color: var(--text-primary); }
+
+        /* ── Kbd shortcut badges ── */
+        kbd {
+            font-family: var(--font-mono);
+            background: var(--surface-3);
+            border: 1px solid var(--border-default);
+            border-bottom-width: 2px;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        /* ── Empty state ── */
+        #empty-state {
+            color: var(--text-tertiary);
+        }
+        #empty-state svg {
+            opacity: 0.3;
+            stroke-width: 1 !important;
+        }
+        #empty-state p.text-lg {
+            font-weight: 600;
+            font-size: 15px;
+            color: var(--text-secondary);
+            margin-top: 20px;
+        }
+
+        /* ── Login screen — refined ── */
+        #login-screen {
+            background: radial-gradient(ellipse at top, var(--accent-subtle), var(--surface-0) 70%);
+        }
+        #login-screen > div {
+            background: var(--surface-1) !important;
+            border: 1px solid var(--border-subtle) !important;
+            box-shadow: var(--shadow-xl);
+        }
+        #login-screen h1 {
+            background: linear-gradient(135deg, var(--text-primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.04em;
+        }
+        #login-btn {
+            background: var(--text-primary) !important;
+            color: var(--surface-1) !important;
+            font-weight: 600;
+            transition: transform var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+        }
+        #login-btn:hover { transform: translateY(-1px); background: var(--accent) !important; color: white !important; }
+
+        /* ── PC card — enhance enumerated fields ── */
+        .pc-card [class*="text-xs"].font-bold,
+        .pc-card .font-semibold {
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: var(--text-primary);
+        }
+
+        /* ── Focus rings — accessible ── */
+        *:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+            border-radius: 4px;
+        }
+
+        /* ── Mobile responsive ── */
+        @media (max-width: 768px) {
+            #sidebar { position: fixed; z-index: 100; height: 100vh; transform: translateX(-100%); transition: transform var(--dur-normal) var(--ease); }
+            #sidebar.mobile-open { transform: translateX(0); box-shadow: var(--shadow-xl); }
+            #pc-canvas { min-width: 100% !important; padding: 8px; }
+            #sidebar-resize { display: none; }
+            #mobile-menu-btn { display: flex !important; }
+            #mute-toggle, #theme-toggle, #exam-mode-btn { display: none !important; }
+            #attention-label, #broadcast-btn span { display: none; }
+            header .flex.items-center.gap-2 { gap: 4px; }
+        }
+        #mobile-menu-btn { display: none; }
+
+        /* ── Semantic badge colors — tinted backgrounds ── */
+        body .bg-green-50 { background: var(--success-bg) !important; }
+        body .bg-green-100 { background: color-mix(in oklch, var(--success), transparent 85%) !important; }
+        body .text-green-600, body .text-green-500, body .text-green-400, body .text-green-700 { color: var(--success) !important; }
+
+        body .bg-red-50 { background: var(--danger-bg) !important; }
+        body .bg-red-100 { background: color-mix(in oklch, var(--danger), transparent 85%) !important; }
+        body .bg-red-200 { background: color-mix(in oklch, var(--danger), transparent 75%) !important; }
+        body .text-red-500, body .text-red-600, body .text-red-700, body .text-red-400, body .text-red-800 { color: var(--danger) !important; }
+        body .border-red-200, body .border-red-300, body .border-red-500 { border-color: var(--danger) !important; }
+
+        body .bg-amber-50, body .bg-orange-50, body .bg-yellow-50 { background: var(--warning-bg) !important; }
+        body .text-amber-600, body .text-amber-700, body .text-orange-500, body .text-orange-600, body .text-yellow-600 { color: var(--warning) !important; }
+        body .border-amber-300, body .border-orange-300 { border-color: var(--warning) !important; }
+
+        body .bg-blue-50 { background: var(--accent-subtle) !important; }
+        body .bg-blue-100 { background: color-mix(in oklch, var(--accent), transparent 80%) !important; }
+        body .text-blue-400, body .text-blue-500, body .text-blue-600, body .text-blue-700 { color: var(--accent) !important; }
+        body .border-blue-200, body .border-blue-300 { border-color: var(--accent) !important; }
+
+        /* ── Badges & pills — refined ── */
+        body span[class*="rounded-full"][class*="bg-green"],
+        body span[class*="rounded-full"][class*="bg-red"],
+        body span[class*="rounded-full"][class*="bg-blue"],
+        body span[class*="rounded-full"][class*="bg-amber"] {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            padding: 2px 8px;
+            border-radius: 999px;
+            box-shadow: inset 0 0 0 1px color-mix(in oklch, currentColor, transparent 85%);
+        }
+
+        /* ── Gradient overrides — blue stat cards ── */
+        body [class*="from-blue"],
+        body [class*="to-blue"] {
+            --tw-gradient-from: var(--accent) !important;
+            --tw-gradient-to: var(--accent-hover) !important;
+        }
+
+        /* ── Reduced motion respect ── */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* ── View Transitions API (2026 native) ── */
+        @supports (view-transition-name: auto) {
+            ::view-transition-old(root), ::view-transition-new(root) {
+                animation-duration: var(--dur-normal);
+                animation-timing-function: var(--ease);
+            }
+        }
+    </style>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         JHS v24 — Vercel × Parsec Dark Hybrid
+         Replaces the light OKLCH theme above via CSS cascade.
+         Pure black canvas · hairline borders · monospace numerics ·
+         single accent blue · pulse-ring LEDs · no shadows.
+         Preserves all Tailwind class usage (158 DOM IDs intact).
+         ═══════════════════════════════════════════════════════════════════ -->
+    <style id="jhs-v24-vercel-dark">
+      :root {
+        --bg: #000;
+        --surface: #0a0a0a;
+        --surface-2: #141414;
+        --surface-3: #1c1c1c;
+        --border: #1f1f1f;
+        --border-hover: #2a2a2a;
+        --border-strong: #3a3a3a;
+        --text: #fafafa;
+        --text-dim: #a3a3a3;
+        --text-mute: #737373;
+        --accent: #3b82f6;
+        --accent-hover: #60a5fa;
+        --accent-subtle: rgba(59, 130, 246, 0.12);
+        --success: #22c55e;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --ring: rgba(59, 130, 246, 0.40);
+        --radius-sm: 6px;
+        --radius: 10px;
+        --radius-lg: 14px;
+        --ease: cubic-bezier(0.16, 1, 0.3, 1);
+        --font-mono-v24: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+      }
+
+      /* Scrollbars */
+      * { scrollbar-width: thin; scrollbar-color: #2a2a2a transparent; }
+      *::-webkit-scrollbar { width: 8px; height: 8px; }
+      *::-webkit-scrollbar-track { background: transparent; }
+      *::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 4px; }
+      *::-webkit-scrollbar-thumb:hover { background: #3a3a3a; }
+
+      html, body {
+        background: var(--bg) !important;
+        color: var(--text) !important;
+        font-family: 'Pretendard Variable', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      body.bg-gray-50 { background: var(--bg) !important; }
+
+      /* Tailwind surface overrides — dark force */
+      .bg-white { background: var(--surface) !important; color: var(--text); }
+      .bg-gray-50 { background: var(--bg) !important; }
+      .bg-gray-100 { background: var(--surface-2) !important; }
+      .bg-gray-200 { background: var(--surface-3) !important; }
+      .bg-zinc-900 { background: #050505 !important; }
+      .bg-zinc-800 { background: var(--surface-2) !important; }
+      .bg-zinc-800\/50 { background: rgba(20, 20, 20, 0.5) !important; }
+      .bg-black\/70 { background: rgba(0, 0, 0, 0.80) !important; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+      .bg-black\/50 { background: rgba(0, 0, 0, 0.65) !important; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+
+      /* Text tiers */
+      .text-gray-900, .text-gray-800, .text-gray-700, .text-zinc-900 { color: var(--text) !important; }
+      .text-gray-600, .text-gray-500, .text-zinc-600 { color: var(--text-dim) !important; }
+      .text-gray-400, .text-gray-300 { color: var(--text-mute) !important; }
+      .text-black { color: var(--text) !important; }
+
+      /* Borders — all Tailwind variants */
+      .border, .border-t, .border-b, .border-l, .border-r, .border-x, .border-y,
+      [class*="border-gray-"], [class*="border-zinc-"], [class*="border-neutral-"],
+      [class*="border-stone-"] {
+        border-color: var(--border) !important;
+      }
+      .divide-gray-200 > * + *, .divide-gray-100 > * + *, .divide-zinc-800 > * + * {
+        border-color: var(--border) !important;
+      }
+
+      /* Rounded radii — consistent */
+      .rounded { border-radius: var(--radius-sm) !important; }
+      .rounded-lg, .rounded-xl { border-radius: var(--radius) !important; }
+      .rounded-2xl, .rounded-3xl { border-radius: var(--radius-lg) !important; }
+
+      /* Remove Tailwind shadows — Vercel doesn't use shadows */
+      .shadow, .shadow-sm, .shadow-md { box-shadow: none !important; }
+      .shadow-lg, .shadow-xl, .shadow-2xl {
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.03) !important;
+      }
+
+      /* ───── Buttons ───── */
+      button, [type="button"], [type="submit"] {
+        font-family: inherit;
+        transition: all 150ms var(--ease);
+        letter-spacing: -0.005em;
+      }
+      button[class*="bg-blue-500"], button[class*="bg-blue-600"], button[class*="bg-blue-700"] {
+        background: var(--accent) !important;
+        color: #fff !important;
+        border: 1px solid transparent !important;
+      }
+      button[class*="bg-blue-500"]:hover, button[class*="bg-blue-600"]:hover {
+        background: var(--accent-hover) !important;
+      }
+      button[class*="bg-green-500"], button[class*="bg-green-600"] {
+        background: var(--success) !important; color: #fff !important;
+      }
+      button[class*="bg-red-500"], button[class*="bg-red-600"] {
+        background: var(--danger) !important; color: #fff !important;
+      }
+      button[class*="bg-amber-500"], button[class*="bg-yellow-500"] {
+        background: var(--warning) !important; color: #000 !important;
+      }
+      button:focus-visible {
+        outline: 2px solid var(--accent) !important;
+        outline-offset: 2px;
+      }
+
+      /* ───── Inputs ───── */
+      input[type="text"], input[type="password"], input[type="email"],
+      input[type="search"], input[type="number"], input[type="url"],
+      textarea, select {
+        background: var(--surface-2) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text) !important;
+        border-radius: var(--radius-sm) !important;
+        transition: border-color 150ms ease, box-shadow 150ms ease;
+        font-family: inherit;
+      }
+      input:focus, textarea:focus, select:focus {
+        outline: none !important;
+        border-color: var(--accent) !important;
+        box-shadow: 0 0 0 3px var(--ring) !important;
+      }
+      input::placeholder, textarea::placeholder { color: var(--text-mute) !important; }
+
+      /* ───── Header ───── */
+      header.bg-white, header {
+        background: rgba(10, 10, 10, 0.85) !important;
+        backdrop-filter: blur(16px) saturate(140%);
+        -webkit-backdrop-filter: blur(16px) saturate(140%);
+        border-bottom: 1px solid var(--border) !important;
+      }
+
+      /* ───── Sidebar ───── */
+      aside#sidebar, #sidebar {
+        background: #050505 !important;
+        border-right: 1px solid var(--border) !important;
+      }
+      #sidebar a, #sidebar button {
+        color: var(--text-dim) !important;
+        transition: color 150ms ease, background 150ms ease;
+        border-radius: var(--radius-sm);
+      }
+      #sidebar a:hover, #sidebar button:hover {
+        color: var(--text) !important;
+        background: rgba(255, 255, 255, 0.04) !important;
+      }
+      #sidebar h1, #sidebar .logo { color: var(--text) !important; letter-spacing: -0.01em; }
+      #sidebar-resize:hover { background: var(--accent) !important; opacity: 0.3; }
+
+      /* ───── License banner ───── */
+      #license-banner {
+        background: rgba(245, 158, 11, 0.08) !important;
+        border-bottom: 1px solid rgba(245, 158, 11, 0.25) !important;
+        color: var(--warning) !important;
+      }
+
+      /* ───── PC Canvas ───── */
+      main { background: var(--bg) !important; }
+      #pc-canvas { background: var(--bg) !important; }
+      #zone-red {
+        background: radial-gradient(ellipse at center, rgba(239, 68, 68, 0.04) 0%, transparent 70%) !important;
+        border-right: 1px dashed rgba(239, 68, 68, 0.1) !important;
+      }
+      #zone-blue {
+        background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.04) 0%, transparent 70%) !important;
+      }
+
+      /* ───── PC Cards ───── */
+      .pc-card, [class*="pc-card"],
+      #pc-grid > div, #pc-grid > .absolute {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius) !important;
+        transition: all 150ms var(--ease) !important;
+        box-shadow: none !important;
+        color: var(--text);
+      }
+      .pc-card:hover, [class*="pc-card"]:hover {
+        border-color: var(--border-strong) !important;
+        background: var(--surface-2) !important;
+        transform: translateY(-1px);
+      }
+      .pc-card .ip, .pc-card [class*="ip"],
+      .pc-card [class*="mono"], .pc-card .font-mono {
+        font-family: var(--font-mono-v24) !important;
+        font-variant-numeric: tabular-nums;
+        color: var(--text-dim);
+      }
+
+      /* ───── Status LEDs ───── */
+      [class*="status-dot"], .status-led {
+        width: 8px; height: 8px; border-radius: 50%;
+        flex-shrink: 0;
+      }
+      .status-online, [data-status="online"] .status-dot,
+      .bg-green-500.status-dot, .bg-emerald-500.status-dot {
+        background: var(--success) !important;
+        box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.20);
+        animation: jhs-pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+      @keyframes jhs-pulse {
+        0%, 100% { box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.20); }
+        50%      { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.08); }
+      }
+      .status-offline, [data-status="offline"] .status-dot,
+      .bg-gray-400.status-dot, .bg-zinc-500.status-dot {
+        background: var(--text-mute) !important;
+        box-shadow: none;
+      }
+
+      /* ───── Monospace numerics (IP, uptime, CPU%, RAM) ───── */
+      .font-mono, [class*="font-mono"], .tabular-nums,
+      code, pre, kbd {
+        font-family: var(--font-mono-v24) !important;
+        font-feature-settings: "tnum", "ss01";
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.01em;
+      }
+      code, pre, kbd { background: var(--surface-2) !important; padding: 2px 6px; border-radius: 4px; }
+
+      /* ───── Modals ───── */
+      /* Outer backdrop */
+      [id$="-modal"].fixed, [id$="Modal"].fixed {
+        background: rgba(0, 0, 0, 0.75) !important;
+        backdrop-filter: blur(10px) saturate(120%);
+        -webkit-backdrop-filter: blur(10px) saturate(120%);
+      }
+      /* Inner panel */
+      #live-container,
+      #block-sites-modal > div,
+      #proc-modal > div,
+      #file-modal > div,
+      #pw-modal > div,
+      #block-prog-modal > div,
+      #cctv-modal > div,
+      #gallery-modal > div,
+      [id$="-modal"] > div[class*="rounded"] {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text) !important;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.02) !important;
+      }
+
+      /* ───── Activity Feed ───── */
+      #activity-feed-panel {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6) !important;
+      }
+      #activity-feed-list > * { border-bottom: 1px solid var(--border); padding: 8px; }
+      #activity-badge {
+        background: var(--accent) !important;
+        color: #fff !important;
+      }
+
+      /* ───── Selection bar (bottom floating) ───── */
+      #selection-bar {
+        background: rgba(10, 10, 10, 0.92) !important;
+        backdrop-filter: blur(16px) saturate(140%);
+        -webkit-backdrop-filter: blur(16px) saturate(140%);
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7) !important;
+        color: var(--text) !important;
+      }
+
+      /* ───── Badges (semantic color chips) ───── */
+      .bg-green-50, .bg-green-100 {
+        background: rgba(34, 197, 94, 0.10) !important;
+        color: var(--success) !important;
+        border: 1px solid rgba(34, 197, 94, 0.20) !important;
+      }
+      .bg-red-50, .bg-red-100 {
+        background: rgba(239, 68, 68, 0.10) !important;
+        color: var(--danger) !important;
+        border: 1px solid rgba(239, 68, 68, 0.20) !important;
+      }
+      .bg-amber-50, .bg-yellow-50, .bg-yellow-100 {
+        background: rgba(245, 158, 11, 0.10) !important;
+        color: var(--warning) !important;
+        border: 1px solid rgba(245, 158, 11, 0.20) !important;
+      }
+      .bg-blue-50, .bg-blue-100 {
+        background: rgba(59, 130, 246, 0.10) !important;
+        color: var(--accent) !important;
+        border: 1px solid rgba(59, 130, 246, 0.20) !important;
+      }
+
+      /* ───── Empty state ───── */
+      #empty-state {
+        color: var(--text-mute) !important;
+      }
+
+      /* ───── CCTV grid ───── */
+      #cctv-grid > * {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius) !important;
+      }
+      #cctv-grid > *:hover { border-color: var(--border-strong) !important; }
+
+      /* ───── Gallery ───── */
+      #gallery-grid > * {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: var(--radius) !important;
+        overflow: hidden;
+        transition: transform 150ms var(--ease);
+      }
+      #gallery-grid > *:hover { transform: scale(1.02); border-color: var(--border-strong) !important; }
+
+      /* ───── File transfer progress ───── */
+      #file-progress { background: var(--accent) !important; }
+
+      /* ───── Focus ring (a11y) ───── */
+      :focus-visible {
+        outline: 2px solid var(--accent) !important;
+        outline-offset: 2px;
+        border-radius: var(--radius-sm);
+      }
+
+      /* ───── Selection color ───── */
+      ::selection { background: var(--accent); color: #fff; }
+
+      /* ───── Dividers ───── */
+      hr { border: 0 !important; border-top: 1px solid var(--border) !important; }
+
+      /* ───── Labels / form helpers ───── */
+      label { color: var(--text-dim); font-size: 13px; letter-spacing: -0.005em; }
+
+      /* ───── Login screen (already black — polish) ───── */
+      #login-screen > div {
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6) !important;
+      }
+      #login-screen h1 { letter-spacing: 0.15em !important; }
+
+      /* ───── Icon-only buttons (toolbar style) ───── */
+      button.px-2, button.px-3 {
+        background: rgba(255, 255, 255, 0.04) !important;
+        border: 1px solid var(--border) !important;
+        color: var(--text-dim) !important;
+      }
+      button.px-2:hover, button.px-3:hover {
+        background: rgba(255, 255, 255, 0.08) !important;
+        color: var(--text) !important;
+        border-color: var(--border-strong) !important;
+      }
+
+      /* ───── Subtle depth: gradient accents on headers only ───── */
+      #dashboard::before {
+        content: '';
+        position: fixed;
+        top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, var(--accent), transparent);
+        opacity: 0.6;
+        z-index: 100;
+        pointer-events: none;
+      }
+
+      /* ───── Typography weight distribution ───── */
+      h1, h2, h3, h4 {
+        letter-spacing: -0.02em;
+        color: var(--text) !important;
+      }
+      h1 { font-weight: 700; }
+      h2 { font-weight: 600; }
+      h3 { font-weight: 600; }
+
+      /* Remove any residual bright backgrounds on interactive lists */
+      li:hover, [role="option"]:hover, [role="menuitem"]:hover {
+        background: rgba(255, 255, 255, 0.04) !important;
+      }
+
+      /* Red/blue zone labels inside zones (if any) */
+      #zone-red::before, #zone-blue::before {
+        color: var(--text-mute) !important;
+        font-family: var(--font-mono-v24);
+        font-size: 10px;
+        letter-spacing: 0.1em;
+      }
+
+      /* ───── Motion: respect reduced motion ───── */
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+    <!-- Login Screen -->
+    <div id="login-screen" class="hidden min-h-screen flex items-center justify-center bg-black">
+        <div class="bg-zinc-900 border border-zinc-800 rounded-2xl shadow-2xl p-8 w-full max-w-sm">
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-black text-white tracking-widest">JHS</h1>
+                <p class="text-xs text-zinc-500 mt-2 tracking-wider">PC MANAGER</p>
+                <p id="login-academy" class="text-xs text-zinc-600 mt-1"></p>
+            </div>
+            <div class="flex flex-col gap-3">
+                <input id="login-user" type="text" placeholder="아이디" autocomplete="username"
+                    class="px-4 py-3 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-white/30">
+                <div class="relative">
+                    <input id="login-pass" type="password" placeholder="비밀번호" autocomplete="current-password"
+                        class="w-full px-4 py-3 pr-12 bg-zinc-800 border border-zinc-700 rounded-lg text-sm text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-white/30">
+                    <button id="login-pass-toggle" type="button" tabindex="-1"
+                        class="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white" title="비밀번호 보이기/숨기기">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </button>
+                </div>
+                <p id="login-error" class="text-xs text-red-400 hidden"></p>
+                <button id="login-btn"
+                    class="w-full py-3 bg-white text-black rounded-lg font-bold hover:bg-zinc-200 transition">
+                    로그인
+                </button>
+            </div>
+            <p class="text-xs text-zinc-700 text-center mt-6">JHS &copy; 2026</p>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="hidden flex h-screen">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="bg-zinc-900 text-white flex flex-col shrink-0 relative transition-[width] duration-200" style="width: 224px;">
+            <!-- Logo + Collapse toggle -->
+            <div class="px-5 py-5 border-b border-zinc-800 flex items-center justify-between">
+                <div class="sidebar-label">
+                    <h1 class="text-xl font-black tracking-widest">JHS</h1>
+                    <p class="text-[10px] text-zinc-500 tracking-wider mt-0.5">PC MANAGER</p>
+                </div>
+                <button id="sidebar-toggle" title="사이드바 접기/펼치기" class="text-zinc-400 hover:text-white w-6 h-6 flex items-center justify-center rounded hover:bg-zinc-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+            </div>
+            <!-- Status -->
+            <div class="px-5 py-3 border-b border-zinc-800 text-xs space-y-1 sidebar-label">
+                <div class="flex justify-between"><span class="text-zinc-400">상태</span><span id="header-status" class="text-green-400">연결 중...</span></div>
+                <div class="flex justify-between"><span class="text-zinc-400">전체</span><span id="stat-total" class="text-white font-semibold">0</span></div>
+                <div class="flex justify-between"><span class="text-zinc-400">접속</span><span id="stat-online" class="text-green-400 font-semibold">0</span></div>
+                <div class="flex justify-between"><span class="text-zinc-400">오프라인</span><span id="stat-offline" class="text-zinc-500">0</span></div>
+            </div>
+            <!-- Menu -->
+            <nav class="flex-1 py-3 text-sm overflow-y-auto">
+                <p class="px-5 py-1 text-[10px] text-zinc-600 uppercase tracking-wider sidebar-label">모니터링</p>
+                <button id="cctv-btn" class="sidebar-btn w-full text-left px-5 py-2 hover:bg-zinc-800 flex items-center gap-2 text-zinc-300 hover:text-white transition" title="전체 화면">
+                    <span class="w-5 flex justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg></span><span class="sidebar-label">전체 화면</span>
+                </button>
+
+                <p class="px-5 py-1 mt-3 text-[10px] text-zinc-600 uppercase tracking-wider sidebar-label">차단</p>
+                <button id="block-sites-btn" class="sidebar-btn w-full text-left px-5 py-2 hover:bg-zinc-800 flex items-center gap-2 text-zinc-300 hover:text-white transition relative" title="사이트 차단">
+                    <span class="w-5 flex justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></span><span class="sidebar-label">사이트 차단</span>
+                    <span id="block-sites-header-badge" class="hidden ml-auto bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center"></span>
+                </button>
+                <button id="block-settings-btn" class="sidebar-btn w-full text-left px-5 py-2 hover:bg-zinc-800 flex items-center gap-2 text-zinc-300 hover:text-white transition" title="설정 차단">
+                    <span class="w-5 flex justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="sidebar-label">설정 차단</span>
+                </button>
+                <button id="block-install-btn" class="sidebar-btn w-full text-left px-5 py-2 hover:bg-zinc-800 flex items-center gap-2 text-zinc-300 hover:text-white transition" title="설치/게임 차단">
+                    <span class="w-5 flex justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span><span class="sidebar-label">설치/게임 차단</span>
+                </button>
+
+                <p class="px-5 py-1 mt-3 text-[10px] text-zinc-600 uppercase tracking-wider sidebar-label">제어</p>
+                <button id="wallpaper-lock-btn" class="sidebar-btn w-full text-left px-5 py-2 hover:bg-zinc-800 flex items-center gap-2 text-zinc-300 hover:text-white transition" title="배경화면 변경">
+                    <span class="w-5 flex justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="sidebar-label">배경화면 변경</span>
+                </button>
+                <!-- 전체 명령: 인라인 확장 (absolute 드롭다운 → accordion) -->
+                <button id="all-cmd-btn" class="sidebar-btn w-full text-left px-5 py-2 hover:bg-zinc-800 flex items-center gap-2 text-zinc-300 hover:text-white transition" title="전체 명령">
+                    <span class="w-5 flex justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></span><span class="sidebar-label">전체 명령</span>
+                    <span class="sidebar-label ml-auto" id="all-cmd-chevron"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
+                </button>
+                <div id="all-cmd-menu" class="hidden bg-zinc-800/50 sidebar-label">
+                    <button data-cmd="open-url" class="w-full text-left pl-12 pr-5 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700">URL 열기</button>
+                    <button data-cmd="lock" class="w-full text-left pl-12 pr-5 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700">전체 잠금</button>
+                    <button data-cmd="message" class="w-full text-left pl-12 pr-5 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700">전체 메시지</button>
+                    <button id="auto-arrange-btn" class="w-full text-left pl-12 pr-5 py-1.5 text-xs text-blue-400 hover:bg-zinc-700">카드 자동 정렬</button>
+                    <hr class="my-1 border-zinc-700">
+                    <button data-cmd="restart" class="w-full text-left pl-12 pr-5 py-1.5 text-xs text-orange-400 hover:bg-zinc-700">전체 재시작</button>
+                    <button data-cmd="sleep" class="w-full text-left pl-12 pr-5 py-1.5 text-xs text-indigo-400 hover:bg-zinc-700">전체 절전 (WOL 가능)</button>
+                    <button data-cmd="shutdown" class="w-full text-left pl-12 pr-5 py-1.5 text-xs text-red-400 hover:bg-zinc-700">전체 종료</button>
+                </div>
+
+                <button id="schedule-btn" class="sidebar-btn w-full text-left px-5 py-2 hover:bg-zinc-800 flex items-center gap-2 text-zinc-300 hover:text-white transition" title="시간 기반 자동 차단">
+                    <span class="w-5 flex justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span><span class="sidebar-label">시간 스케줄</span>
+                </button>
+                <button id="report-btn" class="sidebar-btn w-full text-left px-5 py-2 hover:bg-zinc-800 flex items-center gap-2 text-zinc-300 hover:text-white transition" title="활동 보고서">
+                    <span class="w-5 flex justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span><span class="sidebar-label">활동 보고서</span>
+                </button>
+                <button id="gallery-btn" class="sidebar-btn w-full text-left px-5 py-2 hover:bg-zinc-800 flex items-center gap-2 text-zinc-300 hover:text-white transition" title="차단 위반 스크린샷 갤러리">
+                    <span class="w-5 flex justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span><span class="sidebar-label">위반 갤러리</span>
+                </button>
+                <button id="integrations-btn" class="sidebar-btn w-full text-left px-5 py-2 hover:bg-zinc-800 flex items-center gap-2 text-zinc-300 hover:text-white transition" title="통합 설정 (Telegram, AI)">
+                    <span class="w-5 flex justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></span><span class="sidebar-label">통합 설정</span>
+                </button>
+
+                <p class="px-5 py-1 mt-3 text-[10px] text-zinc-600 uppercase tracking-wider sidebar-label">시스템</p>
+                <button id="agent-update-btn" class="sidebar-btn w-full text-left px-5 py-2 hover:bg-zinc-800 flex items-center gap-2 text-zinc-300 hover:text-white transition" title="에이전트 업데이트">
+                    <span class="w-5 flex justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span><span class="sidebar-label">에이전트 업데이트</span>
+                </button>
+                <button id="boot-all-btn" class="sidebar-btn w-full text-left px-5 py-2 hover:bg-zinc-800 flex items-center gap-2 text-zinc-300 hover:text-white transition" title="전체 PC 켜기 (WOL)">
+                    <span class="w-5 flex justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg></span><span class="sidebar-label">전체 PC 켜기</span>
+                </button>
+                <button id="ping-sweep-btn" class="sidebar-btn w-full text-left px-5 py-2 hover:bg-zinc-800 flex items-center gap-2 text-zinc-300 hover:text-white transition" title="네트워크 상태 확인">
+                    <span class="w-5 flex justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.93 4.93a10 10 0 0 1 14.14 0"/><path d="M7.76 7.76a6 6 0 0 1 8.49 0"/><circle cx="12" cy="12" r="1"/></svg></span><span class="sidebar-label">네트워크 진단</span>
+                </button>
+                <button id="share-screen-btn" class="sidebar-btn w-full text-left px-5 py-2 hover:bg-zinc-800 flex items-center gap-2 text-zinc-300 hover:text-white transition" title="선생님 화면을 학생 PC에 공유">
+                    <span class="w-5 flex justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7"/><line x1="16" y1="5" x2="22" y2="5"/><line x1="19" y1="2" x2="19" y2="8"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></span><span class="sidebar-label">화면 공유</span>
+                </button>
+            </nav>
+            <!-- Footer -->
+            <div class="px-5 py-3 border-t border-zinc-800 space-y-2 sidebar-label">
+                <button id="change-pw-btn" class="w-full text-left text-xs text-zinc-500 hover:text-white transition flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/><path d="M21 2l-2 2-4-4"/></svg> 비밀번호 변경
+                </button>
+                <button id="logout-btn" class="w-full text-left text-xs text-zinc-500 hover:text-white transition flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> 로그아웃
+                </button>
+            </div>
+            <!-- Drag resize handle -->
+            <div id="sidebar-resize" class="absolute top-0 right-0 h-full w-1 cursor-ew-resize hover:bg-blue-500/50 transition" title="드래그해서 사이즈 조절"></div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden bg-gray-50">
+            <!-- Top Bar (minimal) -->
+            <!-- License expiry banner (persistent, dismissible per session) -->
+            <div id="license-banner" class="hidden bg-amber-50 border-b border-amber-200 px-4 py-2 text-sm text-amber-800 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    <span id="license-banner-text"></span>
+                </div>
+                <button id="license-banner-close" class="text-amber-600 hover:text-amber-800">&times;</button>
+            </div>
+            <header class="bg-white border-b px-4 md:px-6 py-3 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2 md:gap-4 text-sm text-gray-500">
+                    <button id="mobile-menu-btn" class="items-center justify-center w-8 h-8 rounded hover:bg-gray-100 text-gray-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                    </button>
+                    <div class="relative hidden md:block">
+                        <svg class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        <input id="pc-search" type="text" placeholder="PC 검색 (/)" class="pl-8 pr-3 py-1.5 border rounded-lg text-sm w-48 focus:outline-none focus:ring-2 focus:ring-blue-300 focus:w-64 transition-[width]">
+                    </div>
+                    <span class="text-gray-300">|</span>
+                    <span class="text-xs" id="system-uptime">서버 확인 중...</span>
+                    <span class="text-gray-300">|</span>
+                    <span class="text-xs" id="system-agents">에이전트 0대</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="attention-btn" title="전체 학생 PC 잠금 (Ctrl+L)" data-attention="off"
+                        class="text-sm px-3 py-1.5 border border-amber-300 rounded-lg hover:bg-amber-50 transition text-amber-700 flex items-center gap-1.5 font-semibold">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span id="attention-label">주목 (Ctrl+L)</span>
+                    </button>
+                    <button id="broadcast-btn" title="전체 학생 PC 메시지 (Ctrl+M)" class="text-sm px-3 py-1.5 border border-blue-300 rounded-lg hover:bg-blue-50 transition text-blue-700 flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l18-8-8 18-2-8-8-2z"/></svg>
+                        <span>방송</span>
+                    </button>
+                    <button id="exam-mode-btn" title="시험 모드 (전체 PC 잠금)" class="text-sm px-3 py-1.5 border border-red-300 rounded-lg hover:bg-red-50 transition text-red-700 flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        <span>시험</span>
+                    </button>
+                    <button id="mute-toggle" title="알림 소리 켜기/끄기" class="text-sm p-1.5 border rounded-lg hover:bg-gray-50 transition text-gray-600 flex items-center">
+                        <svg id="mute-off" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+                        <svg id="mute-on" class="hidden" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>
+                    </button>
+                    <button id="theme-toggle" title="다크/라이트 모드" class="text-sm p-1.5 border rounded-lg hover:bg-gray-50 transition text-gray-600 flex items-center">
+                        <svg id="theme-moon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                        <svg id="theme-sun" class="hidden" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                    </button>
+                    <button id="activity-feed-btn" title="실시간 활동 로그" class="relative text-sm px-3 py-1.5 border rounded-lg hover:bg-gray-50 transition text-gray-600 flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.93 4.93a10 10 0 0 1 14.14 0"/><path d="M7.76 7.76a6 6 0 0 1 8.49 0"/><circle cx="12" cy="12" r="1"/><path d="M16.24 16.24a6 6 0 0 0 0-8.49"/><path d="M19.07 19.07a10 10 0 0 0 0-14.14"/></svg> 활동
+                        <span id="activity-badge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">0</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Selection action bar (shown when PCs are selected) -->
+            <div id="selection-bar" class="hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-40 bg-zinc-900 text-white rounded-xl shadow-2xl px-4 py-3 flex items-center gap-3">
+                <span class="text-sm font-semibold"><span id="selection-count">0</span>대 선택됨</span>
+                <span class="h-5 w-px bg-zinc-700"></span>
+                <button data-sel-cmd="lock" class="text-xs px-3 py-1.5 bg-amber-600 hover:bg-amber-700 rounded">잠금</button>
+                <button data-sel-cmd="message" class="text-xs px-3 py-1.5 bg-blue-600 hover:bg-blue-700 rounded">메시지</button>
+                <button data-sel-cmd="open-url" class="text-xs px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 rounded">URL 열기</button>
+                <button data-sel-cmd="restart" class="text-xs px-3 py-1.5 bg-orange-600 hover:bg-orange-700 rounded">재시작</button>
+                <button data-sel-cmd="sleep" class="text-xs px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 rounded">절전</button>
+                <button data-sel-cmd="shutdown" class="text-xs px-3 py-1.5 bg-red-600 hover:bg-red-700 rounded">종료</button>
+                <span class="h-5 w-px bg-zinc-700"></span>
+                <button id="selection-clear" class="text-xs text-zinc-400 hover:text-white">해제</button>
+            </div>
+
+            <!-- Floating Activity Feed Panel -->
+            <div id="activity-feed-panel" class="hidden fixed top-16 right-4 w-96 max-h-[70vh] bg-white rounded-xl shadow-2xl border border-gray-200 z-40 flex flex-col">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <div>
+                        <h3 class="text-sm font-bold text-gray-800">실시간 활동</h3>
+                        <p class="text-[10px] text-gray-400">학생 PC에서 일어나는 일 실시간</p>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button id="activity-clear-btn" title="비우기" class="text-gray-400 hover:text-red-500 p-1"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                        <button id="activity-close-btn" class="text-gray-400 hover:text-gray-600 text-lg leading-none px-2">&times;</button>
+                    </div>
+                </div>
+                <div id="activity-feed-list" class="flex-1 overflow-y-auto p-2 text-xs space-y-1">
+                    <p class="text-gray-300 text-center py-8">활동 로그 대기 중...</p>
+                </div>
+            </div>
+
+        <!-- Free-form PC Canvas -->
+        <main class="flex-1 overflow-auto">
+            <div id="pc-canvas" style="width: 100%; min-width: 1200px; min-height: 900px;">
+                <!-- Red / Blue zone backgrounds -->
+                <div id="zone-red" class="absolute top-0 left-0 w-1/2 h-full" style="background: linear-gradient(135deg, rgba(239,68,68,0.06) 0%, rgba(239,68,68,0.02) 100%); border-right: 2px dashed rgba(239,68,68,0.15);"></div>
+                <div id="zone-blue" class="absolute top-0 right-0 w-1/2 h-full" style="background: linear-gradient(135deg, rgba(59,130,246,0.02) 0%, rgba(59,130,246,0.06) 100%);"></div>
+                <span class="zone-label text-red-400" style="left: 24px;">RED</span>
+                <span class="zone-label text-blue-400" style="right: 24px; text-align: right;">BLUE</span>
+                <div id="pc-grid">
+                    <!-- PC cards rendered here as absolute positioned -->
+                </div>
+            </div>
+            <div id="empty-state" class="text-center py-20 text-gray-400">
+                <p class="mb-4 flex justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></p>
+                <p class="text-lg">연결된 PC가 없습니다</p>
+                <p class="text-sm mt-2">학생 PC에서 INSTALL.bat을 실행하세요</p>
+            </div>
+        </main>
+        </div><!-- /main content -->
+    </div><!-- /dashboard -->
+
+    <!-- Live View Modal -->
+    <div id="live-modal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div id="live-container" class="bg-white rounded-2xl w-full max-w-5xl max-h-[95vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between px-5 py-2 border-b">
+                <div class="flex items-center gap-3">
+                    <div class="status-dot status-online"></div>
+                    <span id="live-pc-name" class="font-semibold text-sm"></span>
+                    <span id="live-fps" class="text-xs bg-gray-100 px-2 py-0.5 rounded font-mono"></span>
+                    <span id="live-size" class="text-xs text-gray-400"></span>
+                    <span id="live-control-status" class="text-xs text-blue-400"></span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <select id="live-quality" class="text-xs px-2 py-1 border rounded bg-white">
+                        <option value="5-60">CCTV 절약 (5fps)</option>
+                        <option value="15-80">표준 720p (15fps)</option>
+                        <option value="24-90" selected>부드러운 720p (24fps)</option>
+                        <option value="30-95">원격 조작용 (30fps)</option>
+                    </select>
+                    <select id="live-codec" class="text-xs px-2 py-1 border rounded bg-white" title="인코딩 모드">
+                        <option value="mjpeg" selected>MJPEG (호환)</option>
+                        <option value="h264">H.264 (95%↓ 대역폭)</option>
+                    </select>
+                    <button id="live-control" class="text-xs px-3 py-1 bg-gray-100 rounded-lg hover:bg-blue-100 transition">원격 조작</button>
+                    <button id="live-screenshot" class="px-2 py-1.5 bg-gray-100 rounded-lg hover:bg-gray-200 transition flex items-center" title="스크린샷 저장"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+                    <button id="live-fullscreen" class="px-2 py-1.5 bg-gray-100 rounded-lg hover:bg-gray-200 transition flex items-center" title="전체화면"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+                    <button id="live-close" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+                </div>
+            </div>
+            <div class="flex-1 bg-gray-900 flex items-center justify-center min-h-[400px] relative">
+                <canvas id="live-canvas" class="max-w-full max-h-full" style="cursor:default"></canvas>
+                <p id="live-loading" class="absolute text-gray-400 text-sm">스트리밍 연결 중...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Block Sites Modal (global) -->
+    <div id="block-sites-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="font-bold text-gray-800">차단 사이트</h3>
+                    <p class="text-xs text-gray-400"><span id="block-sites-count">0</span>개 차단 중 (하위 도메인 포함)</p>
+                </div>
+                <button id="block-sites-close" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+            </div>
+            <div class="flex gap-2 mb-2">
+                <input id="block-site-input" type="text" placeholder="youtube.com 또는 여러 개 붙여넣기"
+                    list="common-sites"
+                    class="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                <button id="block-site-add" class="px-4 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition">차단</button>
+            </div>
+            <datalist id="common-sites">
+                <option value="youtube.com">유튜브</option>
+                <option value="twitch.tv">트위치 (스트리밍)</option>
+                <option value="tiktok.com">틱톡</option>
+                <option value="instagram.com">인스타그램</option>
+                <option value="facebook.com">페이스북</option>
+                <option value="twitter.com">트위터</option>
+                <option value="x.com">X</option>
+                <option value="reddit.com">레딧</option>
+                <option value="discord.com">디스코드</option>
+                <option value="netflix.com">넷플릭스</option>
+                <option value="roblox.com">로블록스 (웹)</option>
+                <option value="leagueoflegends.com">롤</option>
+                <option value="steam.com">스팀</option>
+                <option value="steampowered.com">스팀 (쇼핑)</option>
+                <option value="epicgames.com">에픽게임즈</option>
+                <option value="namuwiki.com">나무위키</option>
+                <option value="dcinside.com">디시인사이드</option>
+                <option value="ruliweb.com">루리웹</option>
+                <option value="inven.co.kr">인벤</option>
+                <option value="coupang.com">쿠팡</option>
+                <option value="gmarket.co.kr">지마켓</option>
+                <option value="webtoons.com">웹툰</option>
+                <option value="naver.com/webtoon">네이버웹툰</option>
+                <option value="afreecatv.com">아프리카TV</option>
+                <option value="chzzk.naver.com">치지직</option>
+            </datalist>
+            <p class="text-xs text-gray-300 mb-3">쉼표로 구분: youtube.com, twitch.tv, tiktok.com</p>
+            <div id="block-sites-list" class="flex flex-col gap-2 max-h-60 overflow-y-auto"></div>
+            <div class="border-t border-gray-100 mt-4 pt-3 flex justify-end">
+                <button id="block-sites-clear-all" class="text-xs text-red-500 hover:text-red-700 transition flex items-center gap-1.5"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 전부 해제 (모든 PC 즉시 적용)</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Process Viewer Modal -->
+    <div id="proc-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" data-pc="">
+        <div class="bg-white rounded-2xl w-full max-w-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="font-bold text-gray-800">프로세스</h3>
+                    <p class="text-xs text-gray-400"><span id="proc-target"></span> &mdash; <span id="proc-count">0</span>개</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="proc-refresh" class="text-xs px-3 py-1 bg-gray-100 rounded-lg hover:bg-gray-200 transition">새로고침</button>
+                    <button id="proc-close" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+                </div>
+            </div>
+            <input id="proc-filter" type="text" placeholder="검색..."
+                class="w-full px-3 py-2 border rounded-lg text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <div id="proc-list" class="flex flex-col gap-1 max-h-96 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <!-- File Transfer Modal -->
+    <div id="file-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6">
+            <h3 class="font-bold text-gray-800 mb-2">파일 전송</h3>
+            <p id="file-target" class="text-xs text-gray-400 mb-3"></p>
+            <p id="file-name" class="text-sm text-gray-700 truncate mb-2"></p>
+            <div class="w-full bg-gray-200 rounded-full h-2 mb-2">
+                <div id="file-progress" class="bg-blue-500 h-2 rounded-full transition-all" style="width: 0%"></div>
+            </div>
+            <p id="file-status" class="text-xs text-gray-400">준비 중...</p>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div id="pw-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-6">
+            <h3 class="font-bold text-gray-800 mb-4">비밀번호 변경</h3>
+            <div class="flex flex-col gap-3">
+                <input id="pw-current" type="password" placeholder="현재 비밀번호"
+                    class="px-4 py-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input id="pw-new" type="password" placeholder="새 비밀번호"
+                    class="px-4 py-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input id="pw-confirm" type="password" placeholder="새 비밀번호 확인"
+                    class="px-4 py-3 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <p id="pw-error" class="text-xs text-red-500 hidden"></p>
+                <button id="pw-save" class="w-full py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">변경</button>
+                <button id="pw-cancel" class="w-full py-2 text-sm text-gray-400 hover:text-gray-600">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Block Program Modal (per-PC, live process list) -->
+    <div id="block-prog-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" data-pc="">
+        <div class="bg-white rounded-2xl w-full max-w-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="font-bold text-gray-800">프로그램 차단 <span id="block-prog-count" class="text-xs font-normal bg-red-100 text-red-600 px-2 py-0.5 rounded-full ml-1 hidden">0개 차단</span></h3>
+                    <p class="text-xs text-gray-400"><span id="block-prog-target"></span></p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="block-prog-refresh" class="text-xs px-3 py-1 bg-gray-100 rounded-lg hover:bg-gray-200 transition">새로고침</button>
+                    <button id="block-prog-close" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+                </div>
+            </div>
+            <!-- Manual block input -->
+            <div class="flex gap-2 mb-3">
+                <input id="block-prog-manual" type="text" placeholder="이름으로 차단: chrome.exe, game.exe"
+                    class="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                <button id="block-prog-manual-add" class="px-4 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition">차단</button>
+            </div>
+            <!-- Blocked programs -->
+            <div id="block-prog-blocked" class="flex flex-col gap-1 mb-3"></div>
+            <!-- Filter -->
+            <input id="block-prog-filter" type="text" placeholder="실행 중인 프로세스 검색..."
+                class="w-full px-3 py-2 border rounded-lg text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <!-- Running processes -->
+            <div id="block-prog-procs" class="flex flex-col gap-1 max-h-60 overflow-y-auto"></div>
+        </div>
+    </div>
+
+    <!-- Message Modal -->
+    <div id="msg-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" data-pc="">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-gray-800">메시지 보내기</h3>
+                <button id="msg-close" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+            </div>
+            <p class="text-sm text-gray-500 mb-3">받는 PC: <span id="msg-target" class="font-semibold text-gray-700"></span></p>
+            <textarea id="msg-input" rows="3" placeholder="메시지를 입력하세요..."
+                class="w-full px-4 py-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+            <p id="msg-status" class="text-xs text-gray-400 mt-2"></p>
+            <button id="msg-send"
+                class="w-full mt-3 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition">
+                보내기
+            </button>
+        </div>
+    </div>
+
+    <!-- Violation Screenshot Gallery -->
+    <div id="gallery-modal" class="hidden fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+            <div class="flex items-center justify-between px-6 py-4 border-b">
+                <div>
+                    <h3 class="font-bold text-gray-800">차단 위반 스크린샷 갤러리</h3>
+                    <p class="text-xs text-gray-400">학생이 차단된 프로그램 실행을 시도할 때 자동 캡처</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <select id="gallery-filter" class="text-xs border rounded px-2 py-1">
+                        <option value="block-violation">차단 위반만</option>
+                        <option value="">전체</option>
+                        <option value="manual">수동 캡처</option>
+                    </select>
+                    <button id="gallery-close" class="text-gray-400 hover:text-gray-600 text-xl leading-none px-2">&times;</button>
+                </div>
+            </div>
+            <div id="gallery-grid" class="flex-1 overflow-y-auto p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+        </div>
+    </div>
+
+    <!-- Full-size preview -->
+    <div id="gallery-preview" class="hidden fixed inset-0 bg-black/95 z-[60] flex items-center justify-center p-6 cursor-pointer">
+        <img id="gallery-preview-img" class="max-w-full max-h-full object-contain" alt="">
+    </div>
+
+    <!-- Integrations (Telegram, Claude AI) -->
+    <div id="integrations-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-lg p-6">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="font-bold text-gray-800">통합 설정</h3>
+                    <p class="text-xs text-gray-400">외부 서비스 API 키 (DB 저장, 재시작 없음)</p>
+                </div>
+                <button id="integrations-close" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+            </div>
+
+            <div class="space-y-5">
+                <!-- Telegram -->
+                <div class="border rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-semibold text-sm text-gray-700">Telegram 알림</h4>
+                        <span id="tg-status" class="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500">미설정</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-3">@BotFather에서 봇 생성 → 토큰 + chat.id 입력</p>
+                    <input id="tg-token" type="password" placeholder="Bot Token (1234567890:ABC...)" class="w-full px-3 py-2 border rounded text-xs mb-2">
+                    <input id="tg-chat" type="text" placeholder="Chat ID (숫자)" class="w-full px-3 py-2 border rounded text-xs mb-2">
+                    <div class="flex gap-2">
+                        <button id="tg-save" class="flex-1 px-3 py-1.5 bg-blue-500 text-white rounded text-xs hover:bg-blue-600">저장</button>
+                        <button id="tg-test" class="flex-1 px-3 py-1.5 border border-blue-500 text-blue-500 rounded text-xs hover:bg-blue-50">테스트 전송</button>
+                    </div>
+                </div>
+
+                <!-- Anthropic -->
+                <div class="border rounded-lg p-4">
+                    <div class="flex items-center justify-between mb-2">
+                        <h4 class="font-semibold text-sm text-gray-700">Claude AI 비전 분석</h4>
+                        <span id="ai-status" class="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-500">미설정</span>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-3">console.anthropic.com에서 API Key 발급</p>
+                    <input id="ai-key" type="password" placeholder="sk-ant-api03-..." class="w-full px-3 py-2 border rounded text-xs mb-2">
+                    <button id="ai-save" class="w-full px-3 py-1.5 bg-purple-500 text-white rounded text-xs hover:bg-purple-600">저장</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyboard shortcut help -->
+    <div id="shortcut-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="font-bold text-gray-800">키보드 단축키</h3>
+                <button id="shortcut-close" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+            </div>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-700">PC 검색 포커스</span>
+                    <kbd class="px-2 py-0.5 bg-gray-100 border rounded text-xs font-mono">/</kbd>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-700">PC 검색 (Ctrl+F)</span>
+                    <kbd class="px-2 py-0.5 bg-gray-100 border rounded text-xs font-mono">Ctrl + F</kbd>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-700">전체 PC 잠금 (주목 모드)</span>
+                    <kbd class="px-2 py-0.5 bg-gray-100 border rounded text-xs font-mono">Ctrl + L</kbd>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-700">전체 방송 메시지</span>
+                    <kbd class="px-2 py-0.5 bg-gray-100 border rounded text-xs font-mono">Ctrl + M</kbd>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-700">PC 다중 선택</span>
+                    <kbd class="px-2 py-0.5 bg-gray-100 border rounded text-xs font-mono">Ctrl + Click</kbd>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-700">PC 자유 드래그 (grid 무시)</span>
+                    <kbd class="px-2 py-0.5 bg-gray-100 border rounded text-xs font-mono">Shift + Drag</kbd>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-700">모달/검색 닫기</span>
+                    <kbd class="px-2 py-0.5 bg-gray-100 border rounded text-xs font-mono">Esc</kbd>
+                </div>
+                <div class="flex justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-700">이 도움말</span>
+                    <kbd class="px-2 py-0.5 bg-gray-100 border rounded text-xs font-mono">?</kbd>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Modal -->
+    <div id="schedule-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl w-full max-w-2xl p-6 max-h-[85vh] flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="font-bold text-gray-800">시간 스케줄</h3>
+                    <p class="text-xs text-gray-400">수업/쉬는시간 자동 차단·해제 규칙</p>
+                </div>
+                <button id="schedule-close" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+            </div>
+
+            <!-- New rule form -->
+            <div class="bg-gray-50 rounded-lg p-3 mb-4 border border-gray-200">
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <input id="sched-name" type="text" placeholder="규칙 이름 (예: 수업시간 게임 차단)" class="col-span-2 px-3 py-2 border rounded text-sm">
+                    <input id="sched-start" type="time" value="09:00" class="px-3 py-2 border rounded text-sm">
+                    <input id="sched-end" type="time" value="10:00" class="px-3 py-2 border rounded text-sm">
+                    <select id="sched-action" class="px-3 py-2 border rounded text-sm">
+                        <option value="block-program">차단</option>
+                        <option value="unblock-program">해제</option>
+                    </select>
+                    <input id="sched-target" type="text" placeholder="대상 (예: LeagueClient.exe)" class="px-3 py-2 border rounded text-sm">
+                </div>
+                <div class="flex items-center gap-2 mt-2 text-xs">
+                    <span class="text-gray-500">요일:</span>
+                    <label class="flex items-center gap-1"><input type="checkbox" class="sched-day" data-day="1"> 일</label>
+                    <label class="flex items-center gap-1"><input type="checkbox" class="sched-day" data-day="2" checked> 월</label>
+                    <label class="flex items-center gap-1"><input type="checkbox" class="sched-day" data-day="4" checked> 화</label>
+                    <label class="flex items-center gap-1"><input type="checkbox" class="sched-day" data-day="8" checked> 수</label>
+                    <label class="flex items-center gap-1"><input type="checkbox" class="sched-day" data-day="16" checked> 목</label>
+                    <label class="flex items-center gap-1"><input type="checkbox" class="sched-day" data-day="32" checked> 금</label>
+                    <label class="flex items-center gap-1"><input type="checkbox" class="sched-day" data-day="64"> 토</label>
+                    <button id="sched-add" class="ml-auto px-3 py-1.5 bg-blue-500 text-white rounded text-xs hover:bg-blue-600">규칙 추가</button>
+                </div>
+                <div class="flex items-center gap-2 mt-2 text-xs border-t border-gray-200 pt-2">
+                    <span class="text-gray-500">일괄:</span>
+                    <button id="sched-template" class="text-xs text-blue-500 hover:text-blue-700 underline">템플릿 다운로드</button>
+                    <input type="file" id="sched-import-file" accept=".json" class="hidden">
+                    <button id="sched-import" class="text-xs text-blue-500 hover:text-blue-700 underline">JSON 파일 import</button>
+                    <label class="flex items-center gap-1 text-gray-500 ml-auto">
+                        <input type="checkbox" id="sched-import-replace"> 기존 규칙 전부 삭제 후 import
+                    </label>
+                </div>
+            </div>
+
+            <!-- Rule list -->
+            <div id="schedule-list" class="flex-1 overflow-y-auto space-y-1 text-xs"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+
+    <!-- CCTV Mode -->
+    <div id="cctv-modal" class="hidden fixed inset-0 bg-gray-900 z-50 flex flex-col">
+        <div class="flex items-center justify-between px-4 py-2 bg-gray-800 shrink-0">
+            <div class="flex items-center gap-3">
+                <span class="text-white text-sm font-semibold">전체 화면 모드</span>
+                <span id="cctv-count" class="text-gray-400 text-xs">0대</span>
+            </div>
+            <button id="cctv-close" class="text-gray-400 hover:text-white text-xl leading-none">&times;</button>
+        </div>
+        <div id="cctv-grid" class="grid gap-1 p-1 flex-1 overflow-hidden"></div>
+    </div>
+
+</body>
+</html>

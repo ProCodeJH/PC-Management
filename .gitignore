@@ -1,0 +1,85 @@
+# ═══════════════════════════════════════════════════════════════════
+# JHS PC Manager — .gitignore
+# Protects: secrets, runtime data, OS artifacts, large binaries.
+# All "stable artifacts needed for running" (server.js, agent.js,
+# frontend, build-out installer) ARE tracked.
+# ═══════════════════════════════════════════════════════════════════
+
+# ── Dependencies ──
+node_modules/
+dashboard/frontend/node_modules/
+# Phantom package.json under dashboard/frontend declares React but
+# code is Vanilla JS; backend serves it via express.static. Never install there.
+
+# ── Secrets ──
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+dashboard/backend/license.key
+license.key
+
+# ── Runtime / user data ──
+# Databases — always regenerated from schema on first run
+*.db
+*.db-shm
+*.db-wal
+*.db.bak
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+dashboard/backend/logs/
+dashboard/backend/server.log
+dashboard/backend/stderr.txt
+dashboard/backend/crash.txt
+
+# User-generated content
+dashboard/backend/screenshots/
+dashboard/backend/recordings/
+dashboard/backend/temp-uploads/
+dashboard/backend/deploy-bundle/
+dashboard/backend/tmp-cmd*.json
+backups/
+
+# ── Binary distribution artifacts ──
+# Student-Setup ships with ffmpeg.exe + node.exe + input-helper.exe (~300MB).
+# Download separately (docs in README):
+#   - ffmpeg: https://www.gyan.dev/ffmpeg/builds/  (essentials build)
+#   - node:   https://nodejs.org/dist/             (Windows embedded zip)
+#   - input-helper.exe: compile from input-helper.cs via admin-setup.ps1
+build-out/Student-Setup/node.exe
+build-out/Student-Setup/ffmpeg.exe
+build-out/Student-Setup/nssm.exe
+build-out/Student-Setup/input-helper.exe
+build-out/Student-Setup/node_modules/
+
+# Build outputs (generated)
+dist/
+dist2/
+release/
+build-release/
+installer/dist/
+
+# ── Agent self-update artifacts ──
+# Agent saves backup + temp during atomic update; never commit
+dashboard/agent/agent.js.bak
+dashboard/agent/agent-new.js
+dashboard/frontend/agent-latest.js
+
+# ── IDE / OS ──
+.vscode/
+.idea/
+*.swp
+*.swo
+Thumbs.db
+Desktop.ini
+.DS_Store
+ehthumbs.db
+
+# ── Stray generated paths (fix filenames that used backslash-as-path) ──
+dashboard/agent/ProgramDataPCAgentinput-helper.cs
+dashboard/frontend/Enterprise-PC-Managementautostart-server.bat
+"dashboard/frontend/ProgramDataMicrosoftWindowsStart MenuProgramsStartUpPCManager-Server.bat"

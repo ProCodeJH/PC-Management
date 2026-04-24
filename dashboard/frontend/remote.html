@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Remote</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<style>
+  :root {
+    --bg: #000;
+    --panel: rgba(16, 18, 22, 0.72);
+    --panel-border: rgba(255, 255, 255, 0.08);
+    --text: #f3f4f6;
+    --text-dim: #9ca3af;
+    --accent: #3b82f6;
+    --ok: #22c55e;
+    --warn: #f59e0b;
+    --err: #ef4444;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    height: 100%; width: 100%;
+    background: var(--bg); color: var(--text);
+    font-family: 'Pretendard Variable', -apple-system, system-ui, sans-serif;
+    overflow: hidden; user-select: none;
+    -webkit-user-select: none; -webkit-font-smoothing: antialiased;
+  }
+  #stage {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #000;
+    cursor: none;
+  }
+  #stage.show-cursor { cursor: default; }
+  #video, #canvas {
+    max-width: 100%; max-height: 100%;
+    object-fit: contain;
+    width: auto; height: auto;
+    image-rendering: -webkit-optimize-contrast;
+    background: #000;
+    outline: none;
+  }
+  #video { display: none; }
+  #toolbar {
+    position: fixed; top: 0; left: 50%; transform: translateX(-50%) translateY(-100%);
+    margin-top: 10px;
+    padding: 8px 14px;
+    background: var(--panel);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border: 1px solid var(--panel-border);
+    border-radius: 999px;
+    display: flex; align-items: center; gap: 10px;
+    font-size: 12px;
+    transition: transform .35s var(--ease), opacity .25s var(--ease);
+    opacity: 0; pointer-events: none;
+    z-index: 100;
+    min-width: 380px; max-width: 80vw;
+  }
+  body.toolbar-visible #toolbar { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
+  #toolbar .back { background: transparent; border: none; color: var(--text-dim); cursor: pointer; font-size: 14px; padding: 4px 6px; }
+  #toolbar .back:hover { color: var(--text); }
+  #toolbar .pc-name { font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
+  #toolbar .sep { width: 1px; height: 14px; background: var(--panel-border); }
+  #toolbar .stat {
+    color: var(--text-dim); font-variant-numeric: tabular-nums;
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  #toolbar .stat-value { color: var(--text); }
+  #toolbar .led {
+    display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--err);
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+    transition: all .25s ease;
+  }
+  #toolbar.connected .led { background: var(--ok); box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18); }
+  #toolbar.connecting .led { background: var(--warn); box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18); animation: pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.35); } }
+  #toolbar .btn {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: var(--text); cursor: pointer;
+    padding: 5px 10px; border-radius: 6px; font-size: 12px;
+    transition: background .15s ease;
+  }
+  #toolbar .btn:hover { background: rgba(255,255,255,0.1); }
+  #toolbar .btn.close:hover { background: var(--err); border-color: var(--err); color: #fff; }
+
+  #overlay {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: #000;
+    transition: opacity .4s ease, visibility .4s ease;
+    z-index: 90;
+  }
+  #overlay.hidden { opacity: 0; visibility: hidden; }
+  #overlay .brand {
+    font-size: 28px; font-weight: 700; letter-spacing: -0.02em;
+    color: var(--text);
+    margin-bottom: 18px;
+    animation: breathe 2.2s ease-in-out infinite;
+  }
+  @keyframes breathe { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+  #overlay .desc { color: var(--text-dim); font-size: 13px; font-variant-numeric: tabular-nums; }
+  #overlay .spinner {
+    width: 36px; height: 36px; margin-bottom: 22px;
+    border: 2.5px solid rgba(255,255,255,0.12);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #overlay.error .spinner { display: none; }
+  #overlay.error .brand { color: var(--err); animation: none; opacity: 1; }
+
+  #dropzone {
+    position: fixed; inset: 20px;
+    border: 2px dashed rgba(59, 130, 246, 0.6);
+    border-radius: 18px;
+    background: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(8px);
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    pointer-events: none;
+    z-index: 200;
+    animation: dropin .2s ease;
+  }
+  body.dragging #dropzone { display: flex; }
+  @keyframes dropin { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+  #dropzone .dz-icon { width: 56px; height: 56px; color: var(--accent); margin-bottom: 14px; }
+  #dropzone .dz-title { font-size: 18px; font-weight: 600; color: var(--text); }
+  #dropzone .dz-sub { font-size: 13px; color: var(--text-dim); margin-top: 6px; }
+
+  #toasts {
+    position: fixed; bottom: 20px; right: 20px;
+    display: flex; flex-direction: column; gap: 8px;
+    z-index: 300;
+    pointer-events: none;
+  }
+  .toast {
+    padding: 10px 14px;
+    background: var(--panel);
+    backdrop-filter: blur(16px);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 13px;
+    min-width: 220px; max-width: 380px;
+    animation: toastin .3s var(--ease);
+    transition: opacity .3s ease, transform .3s ease;
+  }
+  .toast.success { border-left: 3px solid var(--ok); }
+  .toast.error { border-left: 3px solid var(--err); }
+  .toast.info { border-left: 3px solid var(--accent); }
+  .toast.fading { opacity: 0; transform: translateX(10px); }
+  @keyframes toastin { from { opacity: 0; transform: translateX(12px); } to { opacity: 1; transform: translateX(0); } }
+  .toast-title { font-weight: 500; }
+  .toast-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+  .toast-progress { height: 2px; margin-top: 6px; background: rgba(255,255,255,0.08); border-radius: 1px; overflow: hidden; }
+  .toast-bar { height: 100%; background: var(--accent); width: 0%; transition: width .15s linear; }
+
+  #keygrab { position: absolute; top: -1000px; left: -1000px; opacity: 0; }
+</style>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="canvas"></canvas>
+    <video id="video" autoplay muted playsinline></video>
+    <input id="keygrab" aria-hidden="true" tabindex="-1">
+  </div>
+
+  <div id="toolbar" class="connecting">
+    <button class="back" title="뒤로">&larr;</button>
+    <span class="pc-name" id="tb-name">-</span>
+    <span class="sep"></span>
+    <span class="stat"><span class="led"></span><span id="tb-status">연결 중</span></span>
+    <span class="sep"></span>
+    <span class="stat">지연 <span class="stat-value" id="tb-rtt">-</span></span>
+    <span class="stat">FPS <span class="stat-value" id="tb-fps">-</span></span>
+    <span class="stat">해상도 <span class="stat-value" id="tb-res">-</span></span>
+    <span class="sep"></span>
+    <button class="btn" id="btn-full" title="전체화면 (F)">전체화면</button>
+    <button class="btn" id="btn-ctrl" title="원격 제어 켜기/끄기 (Ctrl+Shift+M)">제어 OFF</button>
+    <button class="btn close" id="btn-close" title="닫기 (Esc)">✕</button>
+  </div>
+
+  <div id="overlay">
+    <div class="spinner"></div>
+    <div class="brand" id="ov-brand">Connecting</div>
+    <div class="desc" id="ov-desc">서버에 연결 중...</div>
+  </div>
+
+  <div id="dropzone">
+    <svg class="dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <div class="dz-title">학생 PC 바탕화면으로 업로드</div>
+    <div class="dz-sub" id="dz-sub">여기에 파일을 놓으세요 · 최대 100MB</div>
+  </div>
+
+  <div id="toasts"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="/auth-helper.js"></script>
+  <script>
+  (() => {
+    'use strict';
+
+    const params = new URLSearchParams(location.search);
+    const PC = params.get('pc');
+    if (!PC) {
+      document.getElementById('ov-brand').textContent = 'No PC specified';
+      document.getElementById('ov-desc').textContent = 'URL에 ?pc=NAME 필요';
+      document.getElementById('overlay').classList.add('error');
+      return;
+    }
+    document.title = 'Remote: ' + PC;
+    document.getElementById('tb-name').textContent = PC;
+    document.getElementById('ov-brand').textContent = PC;
+
+    const STREAM_FPS = 30;
+    const STREAM_QUALITY = 90;
+    const TOOLBAR_HIDE_MS = 2500;
+
+    const stage = document.getElementById('stage');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d', { alpha: false, desynchronized: true });
+    const video = document.getElementById('video');
+    const toolbar = document.getElementById('toolbar');
+    const overlay = document.getElementById('overlay');
+    const toasts = document.getElementById('toasts');
+    const keygrab = document.getElementById('keygrab');
+    const tbStatus = document.getElementById('tb-status');
+    const tbRtt = document.getElementById('tb-rtt');
+    const tbFps = document.getElementById('tb-fps');
+    const tbRes = document.getElementById('tb-res');
+    const btnFull = document.getElementById('btn-full');
+    const btnCtrl = document.getElementById('btn-ctrl');
+    const btnClose = document.getElementById('btn-close');
+    const backBtn = toolbar.querySelector('.back');
+
+    const state = {
+      connected: false,
+      streamMode: null,
+      controlOn: false,
+      lastFrameAt: 0,
+      frameTimes: [],
+      naturalW: 0,
+      naturalH: 0,
+      mse: null,
+      sb: null,
+      mseQueue: [],
+      rtt: null,
+      pingTimer: null,
+      fpsTimer: null,
+      toolbarTimer: null,
+    };
+
+    function pickStreamMode() {
+      try {
+        if ('MediaSource' in window &&
+            MediaSource.isTypeSupported('video/mp4; codecs="avc1.42E01F"')) {
+          return 'h264';
+        }
+      } catch (e) {}
+      return 'mjpeg';
+    }
+    state.streamMode = pickStreamMode();
+
+    function toast(msg, type) {
+      type = type || 'info';
+      const el = document.createElement('div');
+      el.className = 'toast ' + type;
+      el.textContent = msg;
+      toasts.appendChild(el);
+      setTimeout(() => { el.classList.add('fading'); setTimeout(() => el.remove(), 350); }, 3500);
+      return el;
+    }
+
+    function setOverlay(visible, brand, desc, isError) {
+      if (brand) document.getElementById('ov-brand').textContent = brand;
+      if (desc) document.getElementById('ov-desc').textContent = desc;
+      overlay.classList.toggle('hidden', !visible);
+      overlay.classList.toggle('error', !!isError);
+    }
+
+    function showToolbar() {
+      document.body.classList.add('toolbar-visible');
+      clearTimeout(state.toolbarTimer);
+      state.toolbarTimer = setTimeout(() => {
+        if (state.controlOn) document.body.classList.remove('toolbar-visible');
+      }, TOOLBAR_HIDE_MS);
+    }
+    document.addEventListener('mousemove', (e) => {
+      if (e.clientY < 80) showToolbar();
+      stage.classList.toggle('show-cursor', !state.controlOn || e.clientY < 80);
+    });
+    showToolbar();
+
+    const token = (window.getAuthToken && window.getAuthToken()) || null;
+    const sock = io({
+      auth: token ? { token: token } : undefined,
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionDelay: 800,
+    });
+
+    sock.on('connect', () => {
+      state.connected = true;
+      toolbar.classList.remove('connecting');
+      toolbar.classList.add('connected');
+      tbStatus.textContent = '연결됨';
+      setOverlay(true, PC, '스트림 시작 중...');
+      sock.emit('start-stream-request', {
+        pcName: PC,
+        fps: STREAM_FPS,
+        quality: STREAM_QUALITY,
+        mode: state.streamMode,
+        monitor: 0,
+      });
+      startPing();
+    });
+
+    sock.on('disconnect', (reason) => {
+      state.connected = false;
+      toolbar.classList.remove('connected');
+      toolbar.classList.add('connecting');
+      tbStatus.textContent = '재연결 중';
+      setOverlay(true, PC, '연결 끊김 — 자동 재연결 중 (' + reason + ')');
+    });
+
+    sock.on('connect_error', (err) => {
+      toolbar.classList.remove('connected');
+      tbStatus.textContent = '에러';
+      setOverlay(true, '연결 실패', err.message, true);
+    });
+
+    sock.on('screen-frame', (data) => {
+      if (data.pcName && data.pcName !== PC) return;
+      if (state.streamMode === 'h264' && data.h264) {
+        handleH264(data);
+      } else {
+        handleMjpeg(data);
+      }
+    });
+
+    function handleMjpeg(data) {
+      const bytes = data.f || data.frame;
+      if (!bytes) return;
+      const blob = new Blob([bytes], { type: 'image/jpeg' });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        if (state.naturalW !== img.naturalWidth || state.naturalH !== img.naturalHeight) {
+          state.naturalW = img.naturalWidth;
+          state.naturalH = img.naturalHeight;
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          tbRes.textContent = img.naturalWidth + '×' + img.naturalHeight;
+        }
+        ctx.drawImage(img, 0, 0);
+        trackFrame();
+        hideOverlayIfPlaying();
+        if (video.style.display !== 'none') {
+          video.style.display = 'none';
+          canvas.style.display = '';
+        }
+      };
+      img.onerror = () => URL.revokeObjectURL(url);
+      img.src = url;
+    }
+
+    function handleH264(data) {
+      const bytes = data.f || data.frame;
+      if (!bytes) return;
+      const buf = bytes instanceof ArrayBuffer ? new Uint8Array(bytes) :
+                  (bytes.buffer ? new Uint8Array(bytes.buffer, bytes.byteOffset, bytes.byteLength) :
+                   new Uint8Array(bytes));
+      if (!state.mse) initMSE();
+      state.mseQueue.push(buf);
+      drainMSE();
+      trackFrame();
+      hideOverlayIfPlaying();
+      if (canvas.style.display !== 'none') {
+        canvas.style.display = 'none';
+        video.style.display = '';
+      }
+    }
+
+    function initMSE() {
+      state.mse = new MediaSource();
+      video.src = URL.createObjectURL(state.mse);
+      state.mse.addEventListener('sourceopen', () => {
+        try {
+          state.sb = state.mse.addSourceBuffer('video/mp4; codecs="avc1.42E01F"');
+          state.sb.mode = 'sequence';
+          state.sb.addEventListener('updateend', drainMSE);
+          drainMSE();
+        } catch (e) { console.error('MSE init fail', e); toast('H.264 초기화 실패', 'error'); }
+      });
+      video.addEventListener('canplay', () => video.play().catch(()=>{}));
+    }
+
+    function drainMSE() {
+      if (!state.sb || state.sb.updating || !state.mseQueue.length) return;
+      try {
+        if (video.buffered.length && video.currentTime < video.buffered.end(0) - 1.5) {
+          video.currentTime = Math.max(0, video.buffered.end(0) - 0.3);
+        }
+      } catch (e) {}
+      try {
+        state.sb.appendBuffer(state.mseQueue.shift());
+      } catch (e) {
+        if (e.name === 'QuotaExceededError') {
+          try { state.sb.remove(0, video.currentTime - 0.5); } catch (e2) {}
+        }
+      }
+    }
+
+    function trackFrame() {
+      const now = performance.now();
+      state.lastFrameAt = now;
+      state.frameTimes.push(now);
+      while (state.frameTimes.length > 30) state.frameTimes.shift();
+    }
+
+    function hideOverlayIfPlaying() {
+      if (!overlay.classList.contains('hidden')) setOverlay(false);
+    }
+
+    state.fpsTimer = setInterval(() => {
+      if (state.frameTimes.length < 2) { tbFps.textContent = '-'; return; }
+      const span = (state.frameTimes[state.frameTimes.length - 1] - state.frameTimes[0]) / 1000;
+      const fps = span > 0 ? Math.round((state.frameTimes.length - 1) / span) : 0;
+      tbFps.textContent = fps;
+    }, 500);
+
+    function startPing() {
+      if (state.pingTimer) clearInterval(state.pingTimer);
+      state.pingTimer = setInterval(() => {
+        const t = performance.now();
+        sock.volatile.emit('input-ping', { pcName: PC, t: t });
+      }, 2000);
+    }
+    sock.on('input-pong', (data) => {
+      if (!data || data.pcName !== PC) return;
+      const rtt = performance.now() - (data.t || data.clientT || 0);
+      state.rtt = rtt;
+      tbRtt.textContent = Math.round(rtt) + 'ms';
+    });
+
+    function clampToImage(e) {
+      if (!state.naturalW || !state.naturalH) return null;
+      const el = canvas.style.display === 'none' ? video : canvas;
+      const r = el.getBoundingClientRect();
+      const sx = (e.clientX - r.left) / r.width;
+      const sy = (e.clientY - r.top) / r.height;
+      if (sx < 0 || sx > 1 || sy < 0 || sy > 1) return null;
+      return { x: Math.round(sx * state.naturalW), y: Math.round(sy * state.naturalH) };
+    }
+
+    stage.addEventListener('mousemove', (e) => {
+      if (!state.controlOn || !state.connected) return;
+      const p = clampToImage(e); if (!p) return;
+      sock.volatile.emit('remote-mouse', { pcName: PC, action: 'move', x: p.x, y: p.y });
+    });
+    stage.addEventListener('mousedown', (e) => {
+      if (!state.controlOn || !state.connected) return;
+      const p = clampToImage(e); if (!p) return;
+      sock.volatile.emit('remote-mouse', { pcName: PC, action: 'down', x: p.x, y: p.y, button: e.button });
+    });
+    stage.addEventListener('mouseup', (e) => {
+      if (!state.controlOn || !state.connected) return;
+      const p = clampToImage(e); if (!p) return;
+      sock.volatile.emit('remote-mouse', { pcName: PC, action: 'up', x: p.x, y: p.y, button: e.button });
+    });
+    stage.addEventListener('click', (e) => {
+      if (!state.controlOn || !state.connected) return;
+      const p = clampToImage(e); if (!p) return;
+      sock.volatile.emit('remote-mouse', { pcName: PC, action: 'click', x: p.x, y: p.y, button: e.button });
+    });
+    stage.addEventListener('contextmenu', (e) => {
+      if (state.controlOn) e.preventDefault();
+    });
+    stage.addEventListener('wheel', (e) => {
+      if (!state.controlOn || !state.connected) return;
+      e.preventDefault();
+      sock.emit('remote-scroll', { pcName: PC, deltaY: e.deltaY, deltaX: e.deltaX });
+    }, { passive: false });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.fullscreenElement) return;
+      if (e.ctrlKey && e.shiftKey && (e.key === 'M' || e.key === 'm')) {
+        toggleControl(); e.preventDefault(); return;
+      }
+      if (e.key === 'f' && !state.controlOn && !e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey) {
+        toggleFullscreen(); e.preventDefault(); return;
+      }
+      if (!state.controlOn || !state.connected) return;
+      e.preventDefault();
+      sock.volatile.emit('remote-keyboard', {
+        pcName: PC, action: 'down',
+        key: e.key, code: e.code,
+        ctrl: e.ctrlKey, alt: e.altKey, shift: e.shiftKey, meta: e.metaKey,
+      });
+    });
+    document.addEventListener('keyup', (e) => {
+      if (!state.controlOn || !state.connected) return;
+      e.preventDefault();
+      sock.volatile.emit('remote-keyboard', {
+        pcName: PC, action: 'up',
+        key: e.key, code: e.code,
+        ctrl: e.ctrlKey, alt: e.altKey, shift: e.shiftKey, meta: e.metaKey,
+      });
+    });
+
+    sock.on('clipboard-changed', async (data) => {
+      if (!data || data.pcName !== PC || !data.text) return;
+      try { await navigator.clipboard.writeText(data.text); }
+      catch (e) { /* denied */ }
+    });
+    window.addEventListener('focus', async () => {
+      try {
+        const txt = await navigator.clipboard.readText();
+        if (txt && state.connected) sock.emit('clipboard-set', { pcName: PC, text: txt });
+      } catch (e) {}
+    });
+
+    function toggleControl() {
+      state.controlOn = !state.controlOn;
+      btnCtrl.textContent = '제어 ' + (state.controlOn ? 'ON' : 'OFF');
+      btnCtrl.style.background = state.controlOn ? 'var(--accent)' : '';
+      btnCtrl.style.borderColor = state.controlOn ? 'var(--accent)' : '';
+      stage.classList.toggle('show-cursor', !state.controlOn);
+      if (state.controlOn) keygrab.focus();
+      toast('원격 제어 ' + (state.controlOn ? 'ON' : 'OFF'), state.controlOn ? 'success' : 'info');
+    }
+    btnCtrl.onclick = toggleControl;
+
+    function toggleFullscreen() {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else document.documentElement.requestFullscreen().catch(()=>{});
+    }
+    btnFull.onclick = toggleFullscreen;
+
+    btnClose.onclick = () => { window.close(); setTimeout(() => history.back(), 100); };
+    backBtn.onclick = () => { window.close(); setTimeout(() => history.back(), 100); };
+
+    // File drop → learn Desktop upload
+    let dragDepth = 0;
+    window.addEventListener('dragenter', (e) => {
+      e.preventDefault();
+      if (!e.dataTransfer || !e.dataTransfer.types || !e.dataTransfer.types.includes('Files')) return;
+      dragDepth++;
+      document.body.classList.add('dragging');
+    });
+    window.addEventListener('dragover', (e) => { e.preventDefault(); });
+    window.addEventListener('dragleave', () => {
+      dragDepth = Math.max(0, dragDepth - 1);
+      if (dragDepth === 0) document.body.classList.remove('dragging');
+    });
+    window.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      dragDepth = 0;
+      document.body.classList.remove('dragging');
+      const files = Array.from((e.dataTransfer && e.dataTransfer.files) || []);
+      if (!files.length) return;
+      for (const f of files) await uploadFile(f);
+    });
+
+    async function uploadFile(file) {
+      if (file.size > 100 * 1024 * 1024) {
+        toast(file.name + ': 100MB 초과 — 스킵', 'error');
+        return;
+      }
+      const t = document.createElement('div');
+      t.className = 'toast info';
+      const label = document.createElement('div');
+      label.className = 'toast-title';
+      label.textContent = file.name;
+      const sub = document.createElement('div');
+      sub.className = 'toast-sub';
+      sub.textContent = '시작 중...';
+      const prog = document.createElement('div');
+      prog.className = 'toast-progress';
+      const bar = document.createElement('div');
+      bar.className = 'toast-bar';
+      prog.appendChild(bar);
+      t.appendChild(label);
+      t.appendChild(sub);
+      t.appendChild(prog);
+      toasts.appendChild(t);
+
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        const tk = window.getAuthToken ? window.getAuthToken() : null;
+        const xhr = new XMLHttpRequest();
+        const done = new Promise((resolve, reject) => {
+          xhr.upload.onprogress = (ev) => {
+            if (ev.lengthComputable) {
+              const pct = Math.round(ev.loaded / ev.total * 100);
+              bar.style.width = pct + '%';
+              sub.textContent = (ev.loaded/1048576).toFixed(1) + ' / ' + (ev.total/1048576).toFixed(1) + ' MB (' + pct + '%)';
+            }
+          };
+          xhr.onload = () => (xhr.status >= 200 && xhr.status < 300) ? resolve(xhr.responseText) : reject(new Error('HTTP ' + xhr.status));
+          xhr.onerror = () => reject(new Error('network'));
+        });
+        xhr.open('POST', '/api/pcs/' + encodeURIComponent(PC) + '/send-file');
+        if (tk) xhr.setRequestHeader('Authorization', 'Bearer ' + tk);
+        xhr.send(fd);
+        await done;
+        sub.textContent = '학생 PC 바탕화면에 저장됨';
+        bar.style.width = '100%';
+        bar.style.background = 'var(--ok)';
+        t.classList.remove('info');
+        t.classList.add('success');
+        setTimeout(() => { t.classList.add('fading'); setTimeout(() => t.remove(), 350); }, 2500);
+      } catch (err) {
+        sub.textContent = '실패: ' + err.message;
+        bar.style.background = 'var(--err)';
+        t.classList.remove('info');
+        t.classList.add('error');
+        setTimeout(() => { t.classList.add('fading'); setTimeout(() => t.remove(), 350); }, 5000);
+      }
+    }
+
+    window.addEventListener('beforeunload', () => {
+      try { sock.emit('stop-stream-request', { pcName: PC }); } catch (e) {}
+      try { sock.disconnect(); } catch (e) {}
+    });
+
+    setTimeout(showToolbar, 200);
+  })();
+  </script>
+</body>
+</html>

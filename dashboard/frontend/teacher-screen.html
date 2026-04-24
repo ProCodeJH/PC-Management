@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>선생님 화면</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #000; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh; }
+    video { width: 100vw; height: 100vh; object-fit: contain; }
+    #status { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); color: #fff; font: 16px sans-serif; background: rgba(0,0,0,0.7); padding: 8px 20px; border-radius: 8px; z-index: 10; }
+    #status.hidden { display: none; }
+</style>
+</head>
+<body>
+<div id="status">선생님 화면 대기 중...</div>
+<video id="video" autoplay muted playsinline></video>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io({ transports: ['websocket'] });
+const video = document.getElementById('video');
+const status = document.getElementById('status');
+const hostname = location.hostname;
+
+let ms = null;
+let sb = null;
+let queue = [];
+let initialized = false;
+
+socket.on('connect', () => {
+    socket.emit('join-teacher-screen');
+    status.textContent = '선생님 화면 대기 중...';
+});
+
+socket.on('teacher-screen-init', () => {
+    status.classList.add('hidden');
+    initialized = false;
+});
+
+socket.on('teacher-screen-data', (data) => {
+    status.classList.add('hidden');
+    const bytes = data.f instanceof ArrayBuffer ? new Uint8Array(data.f) : new Uint8Array(data.f);
+
+    if (!ms) {
+        const mimeType = 'video/webm; codecs=vp8';
+        if (!MediaSource.isTypeSupported(mimeType)) {
+            // Fallback: show as image frames
+            const blob = new Blob([bytes], { type: 'video/webm' });
+            video.src = URL.createObjectURL(blob);
+            return;
+        }
+        ms = new MediaSource();
+        video.src = URL.createObjectURL(ms);
+        ms.addEventListener('sourceopen', () => {
+            sb = ms.addSourceBuffer(mimeType);
+            sb.mode = 'sequence';
+            sb.addEventListener('updateend', () => {
+                if (queue.length > 0 && !sb.updating) {
+                    sb.appendBuffer(queue.shift());
+                }
+                // Trim buffer
+                try {
+                    if (sb.buffered.length > 0 && sb.buffered.end(0) - sb.buffered.start(0) > 10) {
+                        sb.remove(0, sb.buffered.end(0) - 5);
+                    }
+                } catch(e) {}
+            });
+            // Append queued data
+            if (queue.length > 0) sb.appendBuffer(queue.shift());
+        });
+    }
+
+    if (sb && !sb.updating) {
+        try { sb.appendBuffer(bytes); } catch(e) {}
+    } else {
+        if (queue.length > 5) queue.shift();
+        queue.push(bytes);
+    }
+
+    // Keep at live edge
+    if (video.buffered.length > 0) {
+        const edge = video.buffered.end(0);
+        if (edge - video.currentTime > 3) video.currentTime = edge - 0.5;
+    }
+});
+
+socket.on('teacher-screen-ended', () => {
+    status.textContent = '화면 공유가 종료되었습니다';
+    status.classList.remove('hidden');
+    setTimeout(() => window.close(), 3000);
+});
+
+socket.on('disconnect', () => {
+    status.textContent = '연결 끊김 — 재연결 중...';
+    status.classList.remove('hidden');
+});
+
+// Fullscreen on click
+document.body.addEventListener('click', () => {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+});
+
+// ESC to exit info
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') window.close();
+});
+</script>
+</body>
+</html>
